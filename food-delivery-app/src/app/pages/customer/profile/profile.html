@@ -1,0 +1,171 @@
+<div class="min-h-screen bg-gray-900 text-white pb-20">
+
+  <!-- Header -->
+  <div class="bg-gray-800 px-6 py-4 sticky top-0 z-50">
+    <h2 class="text-xl font-bold">My Profile</h2>
+  </div>
+
+  <div class="px-6 pt-6 space-y-4">
+
+    <!-- Profile header card -->
+    <div class="bg-orange-500 rounded-2xl p-6 text-center">
+      <div class="w-20 h-20 bg-white rounded-full flex items-center
+                  justify-center text-3xl font-bold text-orange-500
+                  mx-auto mb-3">
+        {{ user?.customerName?.charAt(0) }}
+      </div>
+      <h2 class="text-2xl font-bold text-white">{{ user?.customerName }}</h2>
+      <p class="text-orange-100 text-sm mt-1">{{ user?.customerEmail }}</p>
+      <p class="text-orange-100 text-sm">{{ user?.customerPhone }}</p>
+    </div>
+
+    <!-- Personal details -->
+    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg">Personal Details</h3>
+        <button (click)="editMode = !editMode"
+          class="text-orange-400 text-sm hover:underline">
+          {{ editMode ? 'Cancel' : 'Edit' }}
+        </button>
+      </div>
+
+      <!-- View mode -->
+      <div *ngIf="!editMode" class="space-y-3">
+        <div class="flex justify-between py-2 border-b border-gray-700">
+          <span class="text-gray-400 text-sm">Name</span>
+          <span class="text-sm font-semibold">{{ user?.customerName }}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-700">
+          <span class="text-gray-400 text-sm">Email</span>
+          <span class="text-sm font-semibold">{{ user?.customerEmail }}</span>
+        </div>
+        <div class="flex justify-between py-2">
+          <span class="text-gray-400 text-sm">Phone</span>
+          <span class="text-sm font-semibold">{{ user?.customerPhone }}</span>
+        </div>
+      </div>
+
+      <!-- Edit mode -->
+      <div *ngIf="editMode" class="space-y-3">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Full Name</label>
+          <input type="text" [(ngModel)]="form.customerName"
+                 class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600
+                        focus:border-orange-500 outline-none text-white"/>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Email</label>
+          <input type="email" [(ngModel)]="form.customerEmail"
+                 class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600
+                        focus:border-orange-500 outline-none text-white"/>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Phone</label>
+          <input type="text" [(ngModel)]="form.customerPhone"
+                 class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600
+                        focus:border-orange-500 outline-none text-white"/>
+        </div>
+        <button (click)="updateProfile()"
+          class="w-full bg-orange-500 hover:bg-orange-600 p-3
+                 rounded-xl font-semibold transition">
+          Save Changes
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Addresses -->
+    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg">My Addresses</h3>
+        <button (click)="showAddAddress = !showAddAddress"
+          class="text-orange-400 text-sm hover:underline">
+          + Add New
+        </button>
+      </div>
+
+      <!-- Address list -->
+      <div class="space-y-3">
+        <div *ngFor="let addr of addresses"
+             class="bg-gray-900 rounded-xl p-4 border border-gray-700
+                    flex items-start justify-between">
+          <div>
+            <p class="font-semibold text-sm">{{ addr.addressLine1 }}</p>
+            <p class="text-gray-400 text-xs mt-1">
+              {{ addr.city }}, {{ addr.state }} - {{ addr.postalCode }}
+            </p>
+          </div>
+          <button (click)="deleteAddress(addr.addressId)"
+            class="text-red-400 text-sm hover:text-red-300 ml-4">
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      <!-- Add address form -->
+      <div *ngIf="showAddAddress" class="mt-4 space-y-2">
+        <input type="text" [(ngModel)]="newAddress.addressLine1"
+               placeholder="Address Line 1"
+               class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600
+                      focus:border-orange-500 outline-none text-white text-sm"/>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" [(ngModel)]="newAddress.city"
+                 placeholder="City"
+                 class="p-3 rounded-lg bg-gray-900 border border-gray-600
+                        focus:border-orange-500 outline-none text-white text-sm"/>
+          <input type="text" [(ngModel)]="newAddress.state"
+                 placeholder="State"
+                 class="p-3 rounded-lg bg-gray-900 border border-gray-600
+                        focus:border-orange-500 outline-none text-white text-sm"/>
+        </div>
+        <input type="text" [(ngModel)]="newAddress.postalCode"
+               placeholder="Postal Code"
+               class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600
+                      focus:border-orange-500 outline-none text-white text-sm"/>
+        <button (click)="addAddress()"
+          class="w-full bg-orange-500 hover:bg-orange-600 p-3
+                 rounded-xl font-semibold transition text-sm">
+          Save Address
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Logout -->
+    <button (click)="logout()"
+      class="w-full bg-red-600 hover:bg-red-700 p-4 rounded-2xl
+             font-bold text-lg transition">
+      Logout
+    </button>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="fixed bottom-0 left-0 right-0 bg-gray-800
+              border-t border-gray-700 flex items-center
+              justify-around py-3">
+    <button routerLink="/customer/home"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">🏠</span>
+      <span class="text-xs">Home</span>
+    </button>
+    <button routerLink="/customer/orders"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">📦</span>
+      <span class="text-xs">Orders</span>
+    </button>
+    <button routerLink="/customer/coupons"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">🎟️</span>
+      <span class="text-xs">Coupons</span>
+    </button>
+    <button routerLink="/customer/profile"
+      class="flex flex-col items-center gap-1 text-orange-400">
+      <span class="text-xl">👤</span>
+      <span class="text-xs">Profile</span>
+    </button>
+  </div>
+
+</div>

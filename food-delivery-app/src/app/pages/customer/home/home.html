@@ -1,0 +1,104 @@
+<div class="min-h-screen bg-gray-900 text-white pb-20">
+
+  <!-- Navbar -->
+  <div class="bg-gray-800 px-6 py-4 flex items-center justify-between">
+    <div>
+      <p class="text-gray-400 text-sm">Good day 👋</p>
+      <h2 class="text-xl font-bold">{{ userName }}</h2>
+    </div>
+    <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center
+                justify-center font-bold text-lg">
+      {{ userName?.charAt(0) }}
+    </div>
+  </div>
+
+  <div class="px-6 pt-6">
+
+    <!-- Banner -->
+    <div class="bg-orange-500 rounded-2xl p-6 mb-6">
+      <h3 class="text-2xl font-bold text-white mb-1">Hungry? 🍔</h3>
+      <p class="text-orange-100 text-sm">Order from 50+ restaurants near you</p>
+    </div>
+
+    <!-- Search -->
+    <div class="mb-6">
+      <input type="text" [(ngModel)]="search"
+             placeholder="🔍 Search restaurants..."
+             class="w-full p-3 rounded-xl bg-gray-800 border border-gray-700
+                    focus:border-orange-500 outline-none text-white"/>
+    </div>
+
+    <!-- Restaurants heading -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-bold">Restaurants</h3>
+      <span class="text-gray-400 text-sm">{{ filteredRestaurants().length }} found</span>
+    </div>
+
+    <!-- Restaurant cards -->
+    <div class="grid grid-cols-1 gap-4">
+      <div *ngFor="let r of filteredRestaurants()"
+           (click)="goToMenu(r)"
+           class="cursor-pointer bg-gray-800 rounded-2xl p-5
+                  border border-gray-700 hover:border-orange-500 transition">
+
+        <div class="flex items-center gap-4">
+
+          <!-- Icon -->
+          <div class="w-14 h-14 bg-orange-500 rounded-xl flex items-center
+                      justify-center text-2xl font-bold flex-shrink-0">
+            {{ getInitial(r.restaurantName) }}
+          </div>
+
+          <!-- Details -->
+          <div class="flex-1">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-bold text-lg">{{ r.restaurantName }}</h3>
+              <div class="flex items-center gap-1 bg-green-900 px-2 py-1 rounded-lg">
+                <span class="text-amber-400 text-xs">★</span>
+                <span class="text-green-300 text-xs font-semibold">{{ r.rating }}</span>
+              </div>
+            </div>
+            <p class="text-gray-400 text-sm">📍 {{ r.restaurantAddress }}</p>
+            <p class="text-gray-500 text-xs mt-1">🕐 30-45 min · Free delivery</p>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="filteredRestaurants().length === 0"
+         class="text-center py-20">
+      <div class="text-5xl mb-4">🍽️</div>
+      <p class="text-gray-400">No restaurants found</p>
+    </div>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700
+              flex items-center justify-around py-3">
+    <button routerLink="/customer/home"
+      class="flex flex-col items-center gap-1 text-orange-400">
+      <span class="text-xl">🏠</span>
+      <span class="text-xs">Home</span>
+    </button>
+    <button routerLink="/customer/orders"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">📦</span>
+      <span class="text-xs">Orders</span>
+    </button>
+    <button routerLink="/customer/coupons"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">🎟️</span>
+      <span class="text-xs">Coupons</span>
+    </button>
+    <button routerLink="/customer/profile"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">👤</span>
+      <span class="text-xs">Profile</span>
+    </button>
+  </div>
+
+</div>

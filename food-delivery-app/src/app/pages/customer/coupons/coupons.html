@@ -1,0 +1,118 @@
+<div class="min-h-screen bg-gray-900 text-white pb-20">
+
+  <!-- Header -->
+  <div class="bg-gray-800 px-6 py-4 sticky top-0 z-50">
+    <h2 class="text-xl font-bold">🎟️ My Coupons</h2>
+    <p class="text-gray-400 text-sm mt-1">{{ validCoupons().length }} active coupons</p>
+  </div>
+
+  <div class="px-6 pt-6">
+
+    <!-- Valid coupons -->
+    <h3 class="font-bold text-lg mb-3 text-green-400">Active Coupons</h3>
+
+    <div class="space-y-3 mb-8">
+      <div *ngFor="let c of validCoupons()"
+           class="bg-gray-800 rounded-2xl border border-gray-700
+                  overflow-hidden">
+
+        <!-- Top section -->
+        <div class="p-5 flex items-center gap-4">
+
+          <!-- Discount badge -->
+          <div class="w-16 h-16 bg-orange-500 rounded-xl flex flex-col
+                      items-center justify-center flex-shrink-0">
+            <span class="text-white font-bold text-lg">{{ c.discountAmount }}</span>
+            <span class="text-orange-100 text-xs">OFF</span>
+          </div>
+
+          <!-- Details -->
+          <div class="flex-1">
+            <h3 class="font-bold font-mono text-orange-400 text-lg">
+              {{ c.couponCode }}
+            </h3>
+            <p class="text-gray-400 text-sm mt-1">{{ c.description }}</p>
+            <p class="text-gray-500 text-xs mt-1">
+              Expires: {{ c.expiryDate }}
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-dashed border-gray-600 mx-4"></div>
+
+        <!-- Bottom actions -->
+        <div class="p-4 flex gap-3">
+          <button (click)="copyCode(c.couponCode)"
+            class="flex-1 bg-gray-700 hover:bg-gray-600 text-white
+                   py-2 rounded-lg text-sm font-semibold transition">
+            {{ copiedCode === c.couponCode ? '✅ Copied!' : '📋 Copy Code' }}
+          </button>
+          <button (click)="useInCart(c.couponCode)"
+            class="flex-1 bg-orange-500 hover:bg-orange-600 text-white
+                   py-2 rounded-lg text-sm font-semibold transition">
+            Use Now
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Expired coupons -->
+    <div *ngIf="expiredCoupons().length > 0">
+      <h3 class="font-bold text-lg mb-3 text-gray-500">Expired Coupons</h3>
+      <div class="space-y-3">
+        <div *ngFor="let c of expiredCoupons()"
+             class="bg-gray-800 rounded-2xl border border-gray-700
+                    overflow-hidden opacity-50">
+          <div class="p-5 flex items-center gap-4">
+            <div class="w-16 h-16 bg-gray-600 rounded-xl flex flex-col
+                        items-center justify-center flex-shrink-0">
+              <span class="text-gray-300 font-bold text-lg">{{ c.discountAmount }}</span>
+              <span class="text-gray-400 text-xs">OFF</span>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-bold font-mono text-gray-400 text-lg">
+                {{ c.couponCode }}
+              </h3>
+              <p class="text-gray-500 text-sm mt-1">{{ c.description }}</p>
+              <span class="text-xs bg-red-900 text-red-300 px-2 py-1
+                           rounded-full mt-1 inline-block">
+                Expired
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="fixed bottom-0 left-0 right-0 bg-gray-800
+              border-t border-gray-700 flex items-center
+              justify-around py-3">
+    <button routerLink="/customer/home"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">🏠</span>
+      <span class="text-xs">Home</span>
+    </button>
+    <button routerLink="/customer/orders"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">📦</span>
+      <span class="text-xs">Orders</span>
+    </button>
+    <button routerLink="/customer/coupons"
+      class="flex flex-col items-center gap-1 text-orange-400">
+      <span class="text-xl">🎟️</span>
+      <span class="text-xs">Coupons</span>
+    </button>
+    <button routerLink="/customer/profile"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">👤</span>
+      <span class="text-xs">Profile</span>
+    </button>
+  </div>
+
+</div>

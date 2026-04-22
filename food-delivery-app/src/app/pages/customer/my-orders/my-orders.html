@@ -1,0 +1,98 @@
+<div class="min-h-screen bg-gray-900 text-white pb-20">
+
+  <!-- Header -->
+  <div class="bg-gray-800 px-6 py-4 sticky top-0 z-50">
+    <h2 class="text-xl font-bold">My Orders</h2>
+  </div>
+
+  <!-- Status filter -->
+  <div class="flex gap-2 px-6 pt-4 pb-2 overflow-x-auto">
+    <button *ngFor="let s of statuses"
+            (click)="selectedStatus = s"
+            [class]="selectedStatus === s ?
+              'px-4 py-2 rounded-full text-sm whitespace-nowrap bg-orange-500 text-white' :
+              'px-4 py-2 rounded-full text-sm whitespace-nowrap bg-gray-800 text-gray-400'">
+      {{ s }}
+    </button>
+  </div>
+
+  <!-- Orders list -->
+  <div class="px-6 pt-4 space-y-3">
+
+    <div *ngFor="let order of filteredOrders()"
+         (click)="viewDetails(order)"
+         class="cursor-pointer bg-gray-800 rounded-2xl p-5
+                border border-gray-700 hover:border-orange-500 transition">
+
+      <!-- Top row -->
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-bold text-lg">#{{ order.orderId }}</span>
+        <span class="text-xs px-3 py-1 rounded-full font-semibold"
+              [class]="getStatusClass(order.orderStatus)">
+          {{ order.orderStatus }}
+        </span>
+      </div>
+
+      <!-- Restaurant -->
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xl">🍽️</span>
+        <span class="font-semibold">{{ order.restaurantName }}</span>
+      </div>
+
+      <p class="text-gray-500 text-xs mb-3">🕐 {{ order.orderDate }}</p>
+      <p class="text-gray-400 text-sm">{{ order.items }} items</p>
+
+      <!-- Bottom row -->
+      <div class="flex items-center justify-between mt-3 pt-3
+                  border-t border-gray-700">
+        <span class="text-orange-400 font-bold text-lg">
+          ₹{{ order.totalAmount }}
+        </span>
+        <div class="flex gap-3">
+          <button *ngIf="order.orderStatus === 'Delivered'"
+                  (click)="rateOrder($event, order)"
+                  class="text-amber-400 text-sm hover:underline">
+            ⭐ Rate
+          </button>
+          <span class="text-gray-400 text-sm">Details →</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="filteredOrders().length === 0"
+         class="text-center py-20">
+      <div class="text-5xl mb-4">📦</div>
+      <p class="text-gray-400">No orders found</p>
+    </div>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="fixed bottom-0 left-0 right-0 bg-gray-800
+              border-t border-gray-700 flex items-center
+              justify-around py-3">
+    <button routerLink="/customer/home"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">🏠</span>
+      <span class="text-xs">Home</span>
+    </button>
+    <button routerLink="/customer/orders"
+      class="flex flex-col items-center gap-1 text-orange-400">
+      <span class="text-xl">📦</span>
+      <span class="text-xs">Orders</span>
+    </button>
+    <button routerLink="/customer/coupons"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">🎟️</span>
+      <span class="text-xs">Coupons</span>
+    </button>
+    <button routerLink="/customer/profile"
+      class="flex flex-col items-center gap-1 text-gray-400 hover:text-white">
+      <span class="text-xl">👤</span>
+      <span class="text-xs">Profile</span>
+    </button>
+  </div>
+
+</div>

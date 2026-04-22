@@ -1,0 +1,71 @@
+<div class="min-h-screen bg-gray-900 text-white flex flex-col
+            items-center justify-center p-6">
+
+  <!-- Success icon -->
+  <div class="text-8xl mb-6">✅</div>
+
+  <h1 class="text-3xl font-bold text-white mb-3">Order Placed!</h1>
+  <p class="text-gray-400 mb-8 text-center">
+    Your order has been placed successfully and is being prepared
+  </p>
+
+  <!-- Order card -->
+  <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700
+              w-full max-w-sm mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-gray-400">Order ID</span>
+      <span class="font-bold text-orange-400">#{{ orderId }}</span>
+    </div>
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-gray-400">Status</span>
+      <span class="bg-yellow-900 text-yellow-300 px-3 py-1
+                   rounded-full text-sm font-semibold">
+        Pending
+      </span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-gray-400">Est. delivery</span>
+      <span class="font-semibold">30-45 mins</span>
+    </div>
+  </div>
+
+  <!-- Status tracker -->
+  <div class="w-full max-w-sm mb-10">
+    <div class="flex items-center justify-between relative">
+
+      <!-- Line -->
+      <div class="absolute left-0 right-0 top-4 h-0.5 bg-gray-700 z-0"></div>
+
+      <div *ngFor="let step of orderSteps; let i = index"
+           class="flex flex-col items-center z-10">
+        <div class="w-8 h-8 rounded-full flex items-center
+                    justify-center text-sm font-bold"
+             [class]="i === 0 ?
+               'bg-orange-500 text-white' :
+               'bg-gray-700 text-gray-400'">
+          {{ i + 1 }}
+        </div>
+        <span class="text-xs text-gray-400 mt-2 text-center w-16">
+          {{ step }}
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex gap-4 w-full max-w-sm">
+    <button (click)="goToOrders()"
+      class="flex-1 bg-gray-800 border border-gray-600
+             hover:border-orange-500 text-white p-3 rounded-xl
+             font-semibold transition text-sm">
+      View Orders
+    </button>
+    <button (click)="goToHome()"
+      class="flex-1 bg-orange-500 hover:bg-orange-600 text-white
+             p-3 rounded-xl font-semibold transition text-sm">
+      Back to Home
+    </button>
+  </div>
+
+</div>

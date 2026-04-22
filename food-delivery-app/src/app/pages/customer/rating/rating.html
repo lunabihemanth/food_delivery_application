@@ -1,0 +1,62 @@
+<div class="min-h-screen bg-gray-900 text-white p-6">
+
+  <!-- Header -->
+  <div class="flex items-center gap-4 mb-8">
+    <button (click)="goBack()"
+      class="text-gray-400 hover:text-white text-xl">←</button>
+    <h2 class="text-xl font-bold">Rate Your Order</h2>
+  </div>
+
+  <div class="max-w-md mx-auto">
+
+    <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700 text-center">
+
+      <!-- Icon -->
+      <div class="text-6xl mb-4">⭐</div>
+      <h3 class="text-2xl font-bold mb-2">How was your order?</h3>
+      <p class="text-gray-400 mb-8">Order #{{ orderId }}</p>
+
+      <!-- Stars -->
+      <div class="flex justify-center gap-3 mb-4">
+        <button *ngFor="let star of stars"
+                (click)="rating = star"
+                (mouseenter)="hoverStar = star"
+                (mouseleave)="hoverStar = 0"
+                class="text-5xl transition-transform hover:scale-110">
+          <span [class]="star <= (hoverStar || rating) ?
+            'text-amber-400' : 'text-gray-600'">
+            ★
+          </span>
+        </button>
+      </div>
+
+      <!-- Rating label -->
+      <p class="text-lg font-semibold mb-6"
+         [class]="rating <= 2 && rating > 0 ? 'text-red-400' :
+                  rating === 3 ? 'text-amber-400' :
+                  rating >= 4 ? 'text-green-400' : 'text-gray-400'">
+        {{ getRatingLabel() }}
+      </p>
+
+      <!-- Review -->
+      <textarea [(ngModel)]="review"
+                rows="4"
+                placeholder="Tell us about your experience (optional)"
+                class="w-full p-3 rounded-xl bg-gray-900 border border-gray-600
+                       focus:border-orange-500 outline-none text-white text-sm
+                       resize-none mb-6">
+      </textarea>
+
+      <!-- Submit -->
+      <button (click)="submitRating()"
+        [class]="rating === 0 ?
+          'w-full bg-gray-600 text-gray-400 p-4 rounded-xl font-bold text-lg cursor-not-allowed' :
+          'w-full bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-xl font-bold text-lg transition'">
+        Submit Rating
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
