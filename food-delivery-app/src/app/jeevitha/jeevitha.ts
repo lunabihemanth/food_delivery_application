@@ -41,6 +41,8 @@ export class Jeevitha {
     { method: 'DELETE', path: '/ratings/{ratingId}', desc: 'Remove rating (admin/moderation)' },
   ];
 
+  
+
   // ================= STATE =================
   coupons: any[] = [];
   appliedCoupons: any[] = [];
