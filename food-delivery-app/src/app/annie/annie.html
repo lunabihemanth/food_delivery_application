@@ -1,1 +1,250 @@
-<p>annie works!</p>
+<div class="min-h-screen bg-black text-white p-6">
+
+  <!-- HEADER -->
+  <div class="text-center mb-10">
+    <h1 class="text-3xl font-bold text-pink-400">{{ name }}</h1>
+    <p class="text-gray-400">{{ role }}</p>
+  </div>
+
+  <!-- ================= CUSTOMERS ================= -->
+  <h2 class="text-xl font-bold text-green-400 mb-4 max-w-4xl mx-auto">
+    Customer APIs
+  </h2>
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    <div *ngFor="let ep of customerEndpoints"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
+              [ngClass]="getMethodClass(ep.method)">
+          {{ ep.method }}
+        </span>
+        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
+          {{ ep.path }}
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
+      <button (click)="handleCustomer(ep)"
+              class="bg-pink-500 hover:bg-pink-600 px-6 py-2 rounded">
+        Run
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ADDRESSES ================= -->
+  <h2 class="text-xl font-bold text-blue-400 mt-10 mb-4 max-w-4xl mx-auto">
+    Customer Address APIs
+  </h2>
+
+  <!-- Context Customer ID Input -->
+  <div class="max-w-4xl mx-auto mb-6 bg-gray-900 border border-gray-700 p-4 rounded-xl">
+    <h3 class="text-pink-400 font-bold mb-2">
+      Customer ID (required for address APIs)
+    </h3>
+    <input [(ngModel)]="contextCustomerId"
+           placeholder="Enter Customer ID"
+           class="w-full p-2 rounded bg-gray-800 border border-gray-700" />
+  </div>
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    <div *ngFor="let ep of addressEndpoints"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
+              [ngClass]="getMethodClass(ep.method)">
+          {{ ep.method }}
+        </span>
+        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
+          {{ ep.path }}
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
+      <button (click)="handleAddress(ep)"
+              class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded">
+        Run
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMERS LIST POPUP ================= -->
+  <div *ngIf="showCustomersListPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[800px]">
+      <h2 class="text-pink-400 font-bold mb-4">Customers</h2>
+      <div class="grid md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div *ngFor="let c of customers" class="bg-gray-800 p-4 rounded-lg">
+          <p class="text-xs text-gray-400">ID: {{ c.customerId }}</p>
+          <h3 class="text-pink-300 font-bold">{{ c.customerName }}</h3>
+          <p class="text-gray-300">{{ c.customerEmail }}</p>
+          <p class="text-gray-300">{{ c.customerPhone }}</p>
+        </div>
+      </div>
+      <button (click)="showCustomersListPopup=false"
+              class="mt-6 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMER ID POPUP ================= -->
+  <div *ngIf="showCustomerIdPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-pink-400 text-xl font-bold mb-4">{{ customerActionTitle }}</h2>
+      <input [(ngModel)]="customerActionId"
+             placeholder="Customer ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="confirmCustomerIdAction()"
+              class="w-full bg-pink-500 py-2 rounded mb-2">
+        Next
+      </button>
+      <button (click)="showCustomerIdPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMER FORM POPUP ================= -->
+  <div *ngIf="showCustomerFormPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-pink-400 text-xl font-bold mb-4">
+        {{ customerActionType === 'POST' ? 'Create Customer' : 'Update Customer' }}
+      </h2>
+      <input [(ngModel)]="newCustomer.customerName"
+             placeholder="Name"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newCustomer.customerEmail"
+             placeholder="Email"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newCustomer.customerPhone"
+             placeholder="Phone"
+             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitCustomerForm()"
+              class="w-full bg-green-500 py-2 rounded mb-2">
+        {{ customerActionType === 'POST' ? 'Create' : 'Update' }}
+      </button>
+      <button (click)="showCustomerFormPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMER DETAIL POPUP ================= -->
+  <div *ngIf="showCustomerDetailPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-pink-400 text-xl font-bold mb-4">Customer Details</h2>
+      <div *ngIf="singleCustomer" class="space-y-2">
+        <p><span class="text-gray-400">ID:</span> {{ singleCustomer.customerId }}</p>
+        <p><span class="text-gray-400">Name:</span> {{ singleCustomer.customerName }}</p>
+        <p><span class="text-gray-400">Email:</span> {{ singleCustomer.customerEmail }}</p>
+        <p><span class="text-gray-400">Phone:</span> {{ singleCustomer.customerPhone }}</p>
+      </div>
+      <button (click)="showCustomerDetailPopup=false"
+              class="mt-4 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ADDRESSES LIST POPUP ================= -->
+  <div *ngIf="showAddressesListPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[700px]">
+      <h2 class="text-blue-400 font-bold mb-4">Addresses for Customer</h2>
+      <div class="grid md:grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div *ngFor="let a of addresses" class="bg-gray-800 p-4 rounded-lg">
+          <p class="text-xs text-gray-400">Address ID: {{ a.addressId }}</p>
+          <p class="text-gray-300">{{ a.addressLine1 }}</p>
+          <p class="text-gray-300" *ngIf="a.addressLine2">{{ a.addressLine2 }}</p>
+          <p class="text-gray-300">{{ a.city }}, {{ a.state }} {{ a.postalCode }}</p>
+          <p class="text-gray-300">{{ a.country }}</p>
+        </div>
+      </div>
+      <button (click)="showAddressesListPopup=false"
+              class="mt-6 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ADDRESS ID POPUP ================= -->
+  <div *ngIf="showAddressIdPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-blue-400 text-xl font-bold mb-4">{{ addressActionTitle }}</h2>
+      <input [(ngModel)]="addressActionId"
+             placeholder="Address ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="confirmAddressIdAction()"
+              class="w-full bg-blue-500 py-2 rounded mb-2">
+        Next
+      </button>
+      <button (click)="showAddressIdPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ADDRESS FORM POPUP ================= -->
+  <div *ngIf="showAddressFormPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-blue-400 text-xl font-bold mb-4">
+        {{ addressActionType === 'POST' ? 'Add Address' : 'Update Address' }}
+      </h2>
+      <input [(ngModel)]="newAddress.addressLine1"
+             placeholder="Address Line 1"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newAddress.addressLine2"
+             placeholder="Address Line 2 (optional)"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newAddress.city"
+             placeholder="City"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newAddress.state"
+             placeholder="State"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newAddress.postalCode"
+             placeholder="Postal Code"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newAddress.country"
+             placeholder="Country"
+             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitAddressForm()"
+              class="w-full bg-green-500 py-2 rounded mb-2">
+        {{ addressActionType === 'POST' ? 'Add' : 'Update' }}
+      </button>
+      <button (click)="showAddressFormPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ADDRESS DETAIL POPUP ================= -->
+  <div *ngIf="showAddressDetailPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-blue-400 text-xl font-bold mb-4">Address Details</h2>
+      <div *ngIf="singleAddress" class="space-y-2">
+        <p><span class="text-gray-400">ID:</span> {{ singleAddress.addressId }}</p>
+        <p><span class="text-gray-400">Line 1:</span> {{ singleAddress.addressLine1 }}</p>
+        <p *ngIf="singleAddress.addressLine2"><span class="text-gray-400">Line 2:</span> {{ singleAddress.addressLine2 }}</p>
+        <p><span class="text-gray-400">City:</span> {{ singleAddress.city }}</p>
+        <p><span class="text-gray-400">State:</span> {{ singleAddress.state }}</p>
+        <p><span class="text-gray-400">Postal Code:</span> {{ singleAddress.postalCode }}</p>
+        <p><span class="text-gray-400">Country:</span> {{ singleAddress.country }}</p>
+      </div>
+      <button (click)="showAddressDetailPopup=false"
+              class="mt-4 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+</div>

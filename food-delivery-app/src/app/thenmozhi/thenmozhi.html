@@ -1,1 +1,312 @@
-<p>thenmozhi works!</p>
+<div class="min-h-screen bg-black text-white p-6">
+
+  <!-- HEADER -->
+  <div class="text-center mb-10">
+    <h1 class="text-3xl font-bold text-indigo-400">{{ name }}</h1>
+    <p class="text-gray-400">{{ role }}</p>
+  </div>
+
+  <!-- ================= ORDERS ================= -->
+  <h2 class="text-xl font-bold text-green-400 mb-4 max-w-4xl mx-auto">
+    Order APIs
+  </h2>
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    <div *ngFor="let ep of orderEndpoints"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
+              [ngClass]="getMethodClass(ep.method)">
+          {{ ep.method }}
+        </span>
+        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
+          {{ ep.path }}
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
+      <button (click)="handleOrder(ep)"
+              class="bg-indigo-500 hover:bg-indigo-600 px-6 py-2 rounded">
+        Run
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER ITEMS ================= -->
+  <h2 class="text-xl font-bold text-purple-400 mt-10 mb-4 max-w-4xl mx-auto">
+    Order Item APIs
+  </h2>
+
+  <!-- Context Order ID Input -->
+  <div class="max-w-4xl mx-auto mb-6 bg-gray-900 border border-gray-700 p-4 rounded-xl">
+    <h3 class="text-indigo-400 font-bold mb-2">
+      Order ID (required for item APIs)
+    </h3>
+    <input [(ngModel)]="contextOrderId"
+           placeholder="Enter Order ID"
+           class="w-full p-2 rounded bg-gray-800 border border-gray-700" />
+  </div>
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    <div *ngFor="let ep of orderItemEndpoints"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
+              [ngClass]="getMethodClass(ep.method)">
+          {{ ep.method }}
+        </span>
+        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
+          {{ ep.path }}
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
+      <button (click)="handleOrderItem(ep)"
+              class="bg-purple-500 hover:bg-purple-600 px-6 py-2 rounded">
+        Run
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDERS LIST POPUP ================= -->
+  <div *ngIf="showOrdersListPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[900px]">
+      <h2 class="text-indigo-400 font-bold mb-4">Orders</h2>
+      <div class="overflow-x-auto max-h-[60vh] overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-800">
+            <tr>
+              <th class="p-2">ID</th><th>Date</th><th>Customer</th><th>Restaurant</th><th>Driver</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let o of orders" class="border-b border-gray-700">
+              <td class="p-2">{{ o.orderId }}</td>
+              <td>{{ o.orderDate | date:'short' }}</td>
+              <td>{{ o.customerId }}</td>
+              <td>{{ o.restaurantId }}</td>
+              <td>{{ o.deliveryDriverId || '-' }}</td>
+              <td>{{ o.orderStatus }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button (click)="showOrdersListPopup=false"
+              class="mt-6 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER ID POPUP ================= -->
+  <div *ngIf="showOrderIdPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-indigo-400 text-xl font-bold mb-4">{{ orderActionTitle }}</h2>
+      <input [(ngModel)]="orderActionId"
+             placeholder="Order ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="confirmOrderIdAction()"
+              class="w-full bg-indigo-500 py-2 rounded mb-2">
+        Next
+      </button>
+      <button (click)="showOrderIdPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER FORM POPUP (Place Order) ================= -->
+  <div *ngIf="showOrderFormPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-indigo-400 text-xl font-bold mb-4">Place New Order</h2>
+      <input [(ngModel)]="newOrder.customerId"
+             placeholder="Customer ID"
+             type="number"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newOrder.restaurantId"
+             placeholder="Restaurant ID"
+             type="number"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newOrder.deliveryDriverId"
+             placeholder="Driver ID (optional)"
+             type="number"
+             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitOrderForm()"
+              class="w-full bg-green-500 py-2 rounded mb-2">
+        Place Order
+      </button>
+      <button (click)="showOrderFormPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER DETAIL POPUP ================= -->
+  <div *ngIf="showOrderDetailPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[450px]">
+      <h2 class="text-indigo-400 text-xl font-bold mb-4">Order Details</h2>
+      <div *ngIf="singleOrder" class="space-y-2">
+        <p><span class="text-gray-400">Order ID:</span> {{ singleOrder.orderId }}</p>
+        <p><span class="text-gray-400">Date:</span> {{ singleOrder.orderDate | date:'medium' }}</p>
+        <p><span class="text-gray-400">Customer ID:</span> {{ singleOrder.customerId }}</p>
+        <p><span class="text-gray-400">Restaurant ID:</span> {{ singleOrder.restaurantId }}</p>
+        <p><span class="text-gray-400">Driver ID:</span> {{ singleOrder.deliveryDriverId || 'Not assigned' }}</p>
+        <p><span class="text-gray-400">Status:</span> {{ singleOrder.orderStatus }}</p>
+      </div>
+      <button (click)="showOrderDetailPopup=false"
+              class="mt-4 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER STATUS UPDATE POPUP ================= -->
+  <div *ngIf="showOrderStatusPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-indigo-400 text-xl font-bold mb-4">Update Order Status</h2>
+      <p class="text-gray-400 mb-2">Order ID: {{ orderActionId }}</p>
+      <select [(ngModel)]="orderStatusUpdate.status"
+              class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded">
+        <option value="CONFIRMED">Confirmed</option>
+        <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+        <option value="DELIVERED">Delivered</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <button (click)="submitOrderStatusUpdate()"
+              class="w-full bg-yellow-500 py-2 rounded mb-2">
+        Update
+      </button>
+      <button (click)="showOrderStatusPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMER ID INPUT POPUP ================= -->
+  <div *ngIf="showCustomerIdInputPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-indigo-400 text-xl font-bold mb-4">Customer Orders</h2>
+      <input [(ngModel)]="contextCustomerId"
+             placeholder="Customer ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="fetchCustomerOrders()"
+              class="w-full bg-indigo-500 py-2 rounded mb-2">
+        Fetch Orders
+      </button>
+      <button (click)="showCustomerIdInputPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= RESTAURANT ID INPUT POPUP ================= -->
+  <div *ngIf="showRestaurantIdInputPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-indigo-400 text-xl font-bold mb-4">Restaurant Orders</h2>
+      <input [(ngModel)]="contextRestaurantId"
+             placeholder="Restaurant ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="fetchRestaurantOrders()"
+              class="w-full bg-indigo-500 py-2 rounded mb-2">
+        Fetch Orders
+      </button>
+      <button (click)="showRestaurantIdInputPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER ITEMS LIST POPUP ================= -->
+  <div *ngIf="showOrderItemsListPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[700px]">
+      <h2 class="text-purple-400 font-bold mb-4">Order Items</h2>
+      <div class="grid md:grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div *ngFor="let i of orderItems" class="bg-gray-800 p-4 rounded-lg">
+          <p class="text-xs text-gray-400">Order Item ID: {{ i.orderItemId }}</p>
+          <p class="text-gray-300">Item ID: {{ i.itemId }}</p>
+          <p class="text-gray-300">Quantity: {{ i.quantity }}</p>
+        </div>
+      </div>
+      <button (click)="showOrderItemsListPopup=false"
+              class="mt-6 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER ITEM ID POPUP ================= -->
+  <div *ngIf="showOrderItemIdPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-purple-400 text-xl font-bold mb-4">{{ orderItemActionTitle }}</h2>
+      <input [(ngModel)]="orderItemActionId"
+             placeholder="Order Item ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="confirmOrderItemIdAction()"
+              class="w-full bg-purple-500 py-2 rounded mb-2">
+        Next
+      </button>
+      <button (click)="showOrderItemIdPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER ITEM FORM POPUP ================= -->
+  <div *ngIf="showOrderItemFormPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-purple-400 text-xl font-bold mb-4">
+        {{ orderItemActionType === 'POST' ? 'Add Item to Order' : 'Update Quantity' }}
+      </h2>
+      <input *ngIf="orderItemActionType === 'POST'"
+             [(ngModel)]="newOrderItem.itemId"
+             placeholder="Item ID"
+             type="number"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newOrderItem.quantity"
+             placeholder="Quantity"
+             type="number"
+             min="1"
+             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitOrderItemForm()"
+              class="w-full bg-green-500 py-2 rounded mb-2">
+        {{ orderItemActionType === 'POST' ? 'Add' : 'Update' }}
+      </button>
+      <button (click)="showOrderItemFormPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ORDER ITEM DETAIL POPUP (optional, not heavily used) ================= -->
+  <div *ngIf="showOrderItemDetailPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-purple-400 text-xl font-bold mb-4">Order Item Details</h2>
+      <div *ngIf="singleOrderItem" class="space-y-2">
+        <p><span class="text-gray-400">ID:</span> {{ singleOrderItem.orderItemId }}</p>
+        <p><span class="text-gray-400">Item ID:</span> {{ singleOrderItem.itemId }}</p>
+        <p><span class="text-gray-400">Quantity:</span> {{ singleOrderItem.quantity }}</p>
+      </div>
+      <button (click)="showOrderItemDetailPopup=false"
+              class="mt-4 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
+
+</div>

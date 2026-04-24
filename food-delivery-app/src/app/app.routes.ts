@@ -95,14 +95,11 @@ import { LoginComponent } from './landingpage/login/login';
 
 
 // Your modules (adjust paths if needed)
-import { Home as CustomerHome } from './pages/customer/home/home';
-import { Dashboard as DeliveryHome } from './pages/driver/dashboard/dashboard';
-import { Dashboard as RestaurantHome } from './pages/restaurant/dashboard/dashboard';
 import { Hemanth } from './hemanth/hemanth';
 import { Thenmozhi } from './thenmozhi/thenmozhi';
-import { Kisol } from './kisol/kisol';
 import { Jeevitha } from './jeevitha/jeevitha';
 import { Annie } from './annie/annie';
+import { Kisol } from './kisol/kisol';  
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },

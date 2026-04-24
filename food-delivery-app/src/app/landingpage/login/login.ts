@@ -23,7 +23,7 @@ export class LoginComponent {
     { username: 'annie', password: '123', role: 'annie' },
     { username: 'jeevitha', password: '123', role: 'jeevitha' },
     { username: 'kisol', password: '123', role: 'kisol' },
-    { username: 'thenmozhi', password: '123', role: 'thenmozhi' },
+    { username: 'then', password: '123', role: 'thenmozhi' },
     { username: 'hemanth', password: '123', role: 'hemanth' }
   ];
 

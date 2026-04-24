@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sprint.food_delivery.OrderModule.Orders.IOrdersService;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -24,6 +26,9 @@ public class DeliveryDriversController {
 
     @Autowired
     private IDeliveryDriversService service;
+
+    @Autowired
+    private IOrdersService ordersService;   // ✅ Inject the orders service
 
     private Map<String, Object> build(int s, String m, Object d) {
         Map<String, Object> r = new HashMap<>();
@@ -60,5 +65,13 @@ public class DeliveryDriversController {
     public ResponseEntity<?> delete(@PathVariable Integer id) {
         service.delete(id);
         return ResponseEntity.ok(build(200, "Driver deleted", null));
+    }
+
+    // ✅ GET /drivers/{driverId}/orders - list orders assigned to driver
+    @GetMapping("/{driverId}/orders")
+    public ResponseEntity<?> getDriverOrders(@PathVariable Integer driverId) {
+        // Call instance method, not static
+        return ResponseEntity.ok(build(200, "Orders fetched", 
+                ordersService.getOrdersByDriver(driverId)));
     }
 }

@@ -6,279 +6,224 @@
     <p class="text-gray-400">{{ role }}</p>
   </div>
 
-  <!-- ===================================================== -->
-  <!-- RESTAURANTS -->
-  <!-- ===================================================== -->
+  <!-- ================= RESTAURANTS ================= -->
   <h2 class="text-xl font-bold text-green-400 mb-4 max-w-4xl mx-auto">
     Restaurants APIs
   </h2>
 
   <div class="max-w-4xl mx-auto space-y-6">
-
-    @for (ep of restaurantEndpoints; track ep.path + ep.method) {
-
-      <div class="bg-gray-900 border border-gray-700 rounded-xl p-6">
-
-        <div class="flex items-center gap-3 mb-4">
-
-          <span class="px-3 py-1 rounded text-white text-sm font-semibold"
-                [ngClass]="getMethodClass(ep.method)">
-            {{ ep.method }}
-          </span>
-
-          <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
-            {{ ep.path }}
-          </div>
-
+    <div *ngFor="let ep of restaurantEndpoints"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
+              [ngClass]="getMethodClass(ep.method)">
+          {{ ep.method }}
+        </span>
+        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
+          {{ ep.path }}
         </div>
-
-        <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
-
-        <button
-          (click)="handleRestaurant(ep)"
-          class="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded">
-          Run
-        </button>
-
       </div>
-
-    }
-
+      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
+      <button (click)="handleRestaurant(ep)"
+              class="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded">
+        Run
+      </button>
+    </div>
   </div>
 
-  <!-- ===================================================== -->
-  <!-- MENU -->
-  <!-- ===================================================== -->
+  <!-- ================= MENU ================= -->
   <h2 class="text-xl font-bold text-blue-400 mt-10 mb-4 max-w-4xl mx-auto">
     Menu APIs
   </h2>
 
-  <!-- Restaurant ID Input -->
+  <!-- Restaurant ID input for menu APIs -->
   <div class="max-w-4xl mx-auto mb-6 bg-gray-900 border border-gray-700 p-4 rounded-xl">
-
     <h3 class="text-orange-400 font-bold mb-2">
       Restaurant ID (required for menu APIs)
     </h3>
-
-    <input
-      [(ngModel)]="menuRestaurantId"
-      placeholder="Enter Restaurant ID"
-      class="w-full p-2 rounded bg-gray-800 border border-gray-700"
-    />
-
+    <input [(ngModel)]="menuRestaurantId"
+           placeholder="Enter Restaurant ID"
+           class="w-full p-2 rounded bg-gray-800 border border-gray-700" />
   </div>
 
-  <!-- MENU ENDPOINTS -->
   <div class="max-w-4xl mx-auto space-y-6">
-
-    @for (ep of menuEndpoints; track ep.path + ep.method) {
-
-      <div class="bg-gray-900 border border-gray-700 rounded-xl p-6">
-
-        <div class="flex items-center gap-3 mb-4">
-
-          <span class="px-3 py-1 rounded text-white text-sm font-semibold"
-                [ngClass]="getMethodClass(ep.method)">
-            {{ ep.method }}
-          </span>
-
-          <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
-            {{ ep.path }}
-          </div>
-
+    <div *ngFor="let ep of menuEndpoints"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
+              [ngClass]="getMethodClass(ep.method)">
+          {{ ep.method }}
+        </span>
+        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
+          {{ ep.path }}
         </div>
-
-        <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
-
-        <button
-          (click)="handleMenu(ep)"
-          class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded">
-          Run
-        </button>
-
       </div>
-
-    }
-
+      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
+      <button (click)="handleMenu(ep)"
+              class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded">
+        Run
+      </button>
+    </div>
   </div>
 
-  <!-- ===================================================== -->
-  <!-- RESTAURANT POPUP -->
-  <!-- ===================================================== -->
-  @if (showRestaurantsPopup) {
-
-    <div class="fixed inset-0 bg-black/70 flex items-center justify-center">
-
-      <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[800px]">
-
-        <h2 class="text-blue-400 font-bold mb-4">Restaurants</h2>
-
-        <div class="grid md:grid-cols-2 gap-4">
-
-          @for (r of restaurants; track r.restaurantId) {
-
-            <div class="bg-gray-800 p-4 rounded-lg">
-              <p class="text-xs text-gray-400">ID: {{ r.restaurantId }}</p>
-              <h3 class="text-orange-300 font-bold">{{ r.restaurantName }}</h3>
-              <p class="text-gray-300">{{ r.restaurantAddress }}</p>
-              <p class="text-gray-300">{{ r.restaurantPhone }}</p>
-            </div>
-
-          }
-
+  <!-- ================= RESTAURANTS LIST POPUP ================= -->
+  <div *ngIf="showRestaurantsPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[800px]">
+      <h2 class="text-blue-400 font-bold mb-4">Restaurants</h2>
+      <div class="grid md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div *ngFor="let r of restaurants"
+             class="bg-gray-800 p-4 rounded-lg">
+          <p class="text-xs text-gray-400">ID: {{ r.restaurantId }}</p>
+          <h3 class="text-orange-300 font-bold">{{ r.restaurantName }}</h3>
+          <p class="text-gray-300">{{ r.restaurantAddress }}</p>
+          <p class="text-gray-300">{{ r.restaurantPhone }}</p>
         </div>
+      </div>
+      <button (click)="showRestaurantsPopup=false"
+              class="mt-6 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
+    </div>
+  </div>
 
-        <button (click)="showRestaurantsPopup=false"
-                class="mt-6 w-full bg-red-500 py-2 rounded">
-          Close
-        </button>
+  <!-- ================= RESTAURANT ID POPUP ================= -->
+  <div *ngIf="showRestaurantIdPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-orange-400 text-xl font-bold mb-4">
+        Enter Restaurant ID
+      </h2>
+      <input [(ngModel)]="restaurantActionId"
+             placeholder="Restaurant ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitRestaurant()"
+              class="w-full bg-orange-500 py-2 rounded mb-2">
+        Next
+      </button>
+      <button (click)="showRestaurantIdPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
 
+  <!-- ================= RESTAURANT FORM POPUP ================= -->
+  <div *ngIf="showRestaurantFormPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-orange-400 text-xl font-bold mb-4">
+        Restaurant Form
+      </h2>
+      <input [(ngModel)]="newRestaurant.restaurantName"
+             placeholder="Name"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newRestaurant.restaurantAddress"
+             placeholder="Address"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newRestaurant.restaurantPhone"
+             placeholder="Phone"
+             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitRestaurant()"
+              class="w-full bg-green-500 py-2 rounded mb-2">
+        {{ restaurantActionType === 'PUT' ? 'Update' : 'Submit' }}
+      </button>
+      <button (click)="showRestaurantFormPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MENU LIST (GET by restaurant) POPUP ================= -->
+<div *ngIf="showMenuGetPopup"
+     class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[700px]">
+    <h2 class="text-blue-400 text-xl font-bold mb-4">Menu Items</h2>
+    
+    <!-- SCROLLABLE CONTAINER -->
+    <div class="grid md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+      <div *ngFor="let m of menuItems" class="bg-gray-800 p-4 rounded-lg">
+        <p class="text-xs text-gray-400">ID: {{ m.itemId }}</p>
+        <h3 class="text-orange-300 font-bold">{{ m.itemName }}</h3>
+        <p class="text-gray-300 text-sm">{{ m.itemDescription }}</p>
+        <p class="text-gray-300 text-sm">₹ {{ m.itemPrice }}</p>
       </div>
     </div>
-  }
+    
+    <button (click)="showMenuGetPopup=false"
+            class="mt-6 w-full bg-red-500 py-2 rounded">
+      Close
+    </button>
+  </div>
+</div>
 
-  <!-- ===================================================== -->
-  <!-- MENU GET POPUP -->
-  <!-- ===================================================== -->
-  @if (showMenuGetPopup) {
-
-    <div class="fixed inset-0 bg-black/70 flex items-center justify-center">
-
-      <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[700px]">
-
-        <h2 class="text-blue-400 text-xl font-bold mb-4">Menu Items</h2>
-
-        <div class="grid md:grid-cols-2 gap-4">
-
-          @for (m of menuItems; track m.itemId) {
-
-            <div class="bg-gray-800 p-4 rounded-lg">
-              <p class="text-xs text-gray-400">ID: {{ m.itemId }}</p>
-              <h3 class="text-orange-300 font-bold">{{ m.itemName }}</h3>
-              <p class="text-gray-300 text-sm">{{ m.itemDescription }}</p>
-              <p class="text-gray-300 text-sm">₹ {{ m.itemPrice }}</p>
-            </div>
-
-          }
-
-        </div>
-
-        <button (click)="showMenuGetPopup=false"
-                class="mt-6 w-full bg-red-500 py-2 rounded">
-          Close
-        </button>
-
-      </div>
+  <!-- ================= MENU ID POPUP (for PUT/DELETE/GET by id) ================= -->
+  <div *ngIf="showMenuIdPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-blue-400 text-xl font-bold mb-4">
+        {{ menuActionTitle }}
+      </h2>
+      <input [(ngModel)]="menuItemId"
+             placeholder="Menu Item ID"
+             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="confirmMenuAction()"
+              class="w-full bg-blue-500 py-2 rounded mb-2">
+        Next
+      </button>
+      <button (click)="showMenuIdPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
     </div>
-  }
+  </div>
 
-  <!-- ===================================================== -->
-  <!-- MENU FORM POPUP (POST / PUT) -->
-  <!-- ===================================================== -->
-  @if (showMenuFormPopup) {
-
-    <div class="fixed inset-0 bg-black/70 flex items-center justify-center">
-
-      <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-
-        <h2 class="text-green-400 text-xl font-bold mb-4">
-          Add / Edit Menu Item
-        </h2>
-
-        <input [(ngModel)]="newMenu.itemName"
-               placeholder="Item Name"
-               class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-
-        <input [(ngModel)]="newMenu.itemDescription"
-               placeholder="Description"
-               class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-
-        <input [(ngModel)]="newMenu.itemPrice"
-               placeholder="Price"
-               class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
-
-        <button (click)="submitMenuForm()"
-                class="w-full bg-green-500 py-2 rounded mb-2">
-          Submit
-        </button>
-
-        <button (click)="showMenuFormPopup=false"
-                class="w-full bg-red-500 py-2 rounded">
-          Cancel
-        </button>
-
-      </div>
+  <!-- ================= MENU FORM POPUP (for POST/PUT) ================= -->
+  <div *ngIf="showMenuFormPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-blue-400 text-xl font-bold mb-4">
+        {{ menuActionType === 'POST' ? 'Add Menu Item' : 'Update Menu Item' }}
+      </h2>
+      <input [(ngModel)]="newMenu.itemName"
+             placeholder="Item Name"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newMenu.itemDescription"
+             placeholder="Description"
+             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <input [(ngModel)]="newMenu.itemPrice"
+             placeholder="Price"
+             type="number"
+             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+      <button (click)="submitMenuForm()"
+              class="w-full bg-green-500 py-2 rounded mb-2">
+        {{ menuActionType === 'POST' ? 'Add' : 'Update' }}
+      </button>
+      <button (click)="showMenuFormPopup=false"
+              class="w-full bg-red-500 py-2 rounded">
+        Cancel
+      </button>
     </div>
-  }
+  </div>
 
-  <!-- ===================================================== -->
-  <!-- ID POPUP (GET / PUT / DELETE) -->
-  <!-- ===================================================== -->
-  @if (showMenuIdPopup) {
-
-    <div class="fixed inset-0 bg-black/70 flex items-center justify-center">
-
-      <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[350px]">
-
-        <h2 class="text-yellow-400 text-xl font-bold mb-4">
-          {{ menuActionTitle }}
-        </h2>
-
-        <input [(ngModel)]="menuItemId"
-               placeholder="Enter Item ID"
-               class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
-
-        <button (click)="confirmMenuAction()"
-                class="w-full bg-yellow-500 py-2 rounded mb-2">
-          Confirm
-        </button>
-
-        <button (click)="showMenuIdPopup=false"
-                class="w-full bg-red-500 py-2 rounded">
-          Cancel
-        </button>
-
+  <!-- ================= MENU DETAIL POPUP (for GET by id) ================= -->
+  <div *ngIf="showMenuItemDetailPopup"
+       class="fixed inset-0 bg-black/70 flex items-center justify-center">
+    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+      <h2 class="text-blue-400 text-xl font-bold mb-4">Menu Item Details</h2>
+      <div *ngIf="singleMenuItem" class="space-y-2">
+        <p><span class="text-gray-400">ID:</span> {{ singleMenuItem.itemId }}</p>
+        <p><span class="text-gray-400">Name:</span> {{ singleMenuItem.itemName }}</p>
+        <p><span class="text-gray-400">Description:</span> {{ singleMenuItem.itemDescription }}</p>
+        <p><span class="text-gray-400">Price:</span> ₹ {{ singleMenuItem.itemPrice }}</p>
+        <p><span class="text-gray-400">Restaurant ID:</span> {{ singleMenuItem.restaurantId }}</p>
       </div>
+      <button (click)="showMenuItemDetailPopup=false"
+              class="mt-4 w-full bg-red-500 py-2 rounded">
+        Close
+      </button>
     </div>
-  }
-
-  <!-- ===================================================== -->
-  <!-- RESTAURANT FORM POPUP -->
-  <!-- ===================================================== -->
-  @if (showRestaurantFormPopup) {
-
-    <div class="fixed inset-0 bg-black/70 flex items-center justify-center">
-
-      <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-
-        <h2 class="text-orange-400 text-xl font-bold mb-4">
-          Add / Edit Restaurant
-        </h2>
-
-        <input [(ngModel)]="newRestaurant.restaurantName"
-               placeholder="Name"
-               class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-
-        <input [(ngModel)]="newRestaurant.restaurantAddress"
-               placeholder="Address"
-               class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-
-        <input [(ngModel)]="newRestaurant.restaurantPhone"
-               placeholder="Phone"
-               class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
-
-        <button (click)="submitRestaurant()"
-                class="w-full bg-green-500 py-2 rounded mb-2">
-          Submit
-        </button>
-
-        <button (click)="showRestaurantFormPopup=false"
-                class="w-full bg-red-500 py-2 rounded">
-          Cancel
-        </button>
-
-      </div>
-    </div>
-  }
+  </div>
 
 </div>

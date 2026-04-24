@@ -10,4 +10,10 @@ public interface IOrdersService {
     OrdersResponseDTO update(Integer id, OrdersRequestDTO dto);
     String delete(Integer id);
     List<OrdersResponseDTO> getByRestaurantId(Integer restaurantId);
+
+    // Delivery assignment methods
+    OrdersResponseDTO assignDriver(Integer orderId, Integer driverId);
+    OrdersResponseDTO updateDeliveryStatus(Integer orderId, String status);
+    List<OrdersResponseDTO> getOrdersByDriver(Integer driverId);
+    
 }

@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './hemanth.html',
-  styleUrl: './hemanth.css',
+  styleUrls: ['./hemanth.css']
 })
 export class Hemanth {
 
@@ -19,7 +19,7 @@ export class Hemanth {
   name = 'Hemanth';
   role = 'Restaurant & Menu API Tester';
 
-  // ================= ENDPOINTS =================
+  // ================= ENDPOINTS (display purposes) =================
   restaurantEndpoints = [
     { method: 'GET', path: '/restaurants', desc: 'List restaurants' },
     { method: 'POST', path: '/restaurants', desc: 'Add restaurant' },
@@ -28,26 +28,35 @@ export class Hemanth {
   ];
 
   menuEndpoints = [
-    { method: 'POST', path: '/menu-items', desc: 'Add menu item' },
-    { method: 'GET', path: '/menu-items/restaurant/{restaurantId}', desc: 'Get menu items' },
-    { method: 'GET', path: '/menu-items/{itemId}', desc: 'Get item by id' },
-    { method: 'PUT', path: '/menu-items/{itemId}', desc: 'Update item' },
-    { method: 'DELETE', path: '/menu-items/{itemId}', desc: 'Delete item' },
+    { method: 'POST', path: '/menu-items', desc: 'Add menu item (restaurantId in body)' },
+    { method: 'GET', path: '/menu-items/restaurants/{restaurantId}/menu-items', desc: 'View restaurant menu' },
+    { method: 'GET', path: '/menu-items/{itemId}', desc: 'View menu item details' },
+    { method: 'PUT', path: '/menu-items/{itemId}', desc: 'Update menu item' },
+    { method: 'DELETE', path: '/menu-items/{itemId}', desc: 'Remove menu item' },
   ];
 
   // ================= STATE =================
   restaurants: any[] = [];
   menuItems: any[] = [];
+  singleMenuItem: any = null;
 
-  restaurantId = '';
+  restaurantActionId = '';
   menuRestaurantId = '';
   menuItemId = '';
-  restaurantActionId = '';
 
-  newRestaurant = { restaurantName: '', restaurantAddress: '', restaurantPhone: '' };
-  newMenu = { itemName: '', itemDescription: '', itemPrice: '' };
+  newRestaurant = {
+    restaurantName: '',
+    restaurantAddress: '',
+    restaurantPhone: ''
+  };
 
-  // ================= POPUPS =================
+  newMenu = {
+    itemName: '',
+    itemDescription: '',
+    itemPrice: ''
+  };
+
+  // ================= POPUP FLAGS =================
   showRestaurantsPopup = false;
   showRestaurantFormPopup = false;
   showRestaurantIdPopup = false;
@@ -55,11 +64,11 @@ export class Hemanth {
   showMenuGetPopup = false;
   showMenuFormPopup = false;
   showMenuIdPopup = false;
+  showMenuItemDetailPopup = false;
 
   restaurantActionType = '';
   menuActionType = '';
   menuActionTitle = '';
-  restaurantActionTitle = '';
 
   // ================= AUTH =================
   authHeader() {
@@ -71,176 +80,22 @@ export class Hemanth {
     };
   }
 
-  // =========================================================
-  // RESTAURANTS
-  // =========================================================
-  handleRestaurant(ep: any) {
-
-    const url = `${this.baseUrl}/restaurants`;
-
-    if (ep.method === 'GET') {
-      this.http.get<any>(url, this.authHeader())
-        .subscribe(res => {
-          this.restaurants = res.data || res;
-          this.showRestaurantsPopup = true;
-        });
-    }
-
-    if (ep.method === 'POST') {
-      this.newRestaurant = { restaurantName: '', restaurantAddress: '', restaurantPhone: '' };
-      this.restaurantActionType = 'POST';
-      this.showRestaurantFormPopup = true;
-    }
-
-    if (ep.method === 'PUT') {
-      this.restaurantActionType = 'PUT';
-      this.restaurantActionTitle = "Enter Restaurant ID";
-      this.showRestaurantIdPopup = true;
-    }
-
-    if (ep.method === 'DELETE') {
-      this.restaurantActionType = 'DELETE';
-      this.restaurantActionTitle = "Enter Restaurant ID";
-      this.showRestaurantIdPopup = true;
-    }
+  safe(value: any): string {
+    return value ? value.toString().trim() : '';
   }
 
-  submitRestaurant() {
-
-    const url = `${this.baseUrl}/restaurants`;
-
-    if (this.restaurantActionType === 'POST') {
-      this.http.post(url, this.newRestaurant, this.authHeader())
-        .subscribe(() => {
-          alert("Restaurant Added ✅");
-          this.showRestaurantFormPopup = false;
-        });
-    }
-
-    if (this.restaurantActionType === 'PUT') {
-      this.http.put(
-        `${url}/${this.restaurantActionId}`,
-        this.newRestaurant,
-        this.authHeader()
-      ).subscribe(() => {
-        alert("Restaurant Updated ✅");
-        this.showRestaurantIdPopup = false;
-      });
-    }
-
-    if (this.restaurantActionType === 'DELETE') {
-      this.http.delete(
-        `${url}/${this.restaurantActionId}`,
-        this.authHeader()
-      ).subscribe(() => {
-        alert("Restaurant Deleted ✅");
-        this.showRestaurantIdPopup = false;
-      });
-    }
+  extractData(res: any): any[] {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (res.data && Array.isArray(res.data)) return res.data;
+    if (res.data) return [res.data];
+    return [res];
   }
 
-  // =========================================================
-  // MENU
-  // =========================================================
-  handleMenu(ep: any) {
-
-    const rid = this.menuRestaurantId;
-
-    if (ep.method === 'GET' && ep.path.includes('restaurant')) {
-
-      if (!rid) return alert("Enter Restaurant ID");
-
-      this.http.get<any>(
-        `${this.baseUrl}/menu-items/restaurant/${rid}`,
-        this.authHeader()
-      ).subscribe(res => {
-        this.menuItems = res.data || res;
-        this.showMenuGetPopup = true;
-      });
-    }
-
-    if (ep.method === 'GET' && ep.path.includes('{itemId}')) {
-      this.menuActionType = 'GET';
-      this.menuActionTitle = "Enter Item ID";
-      this.showMenuIdPopup = true;
-    }
-
-    if (ep.method === 'POST') {
-      if (!rid) return alert("Enter Restaurant ID");
-      this.menuActionType = 'POST';
-      this.newMenu = { itemName: '', itemDescription: '', itemPrice: '' };
-      this.showMenuFormPopup = true;
-    }
-
-    if (ep.method === 'PUT') {
-      this.menuActionType = 'PUT';
-      this.menuActionTitle = "Enter Item ID";
-      this.showMenuIdPopup = true;
-    }
-
-    if (ep.method === 'DELETE') {
-      this.menuActionType = 'DELETE';
-      this.menuActionTitle = "Enter Item ID";
-      this.showMenuIdPopup = true;
-    }
+  showError(err: any) {
+    alert(err?.error?.message ?? err?.message ?? 'An error occurred');
   }
 
-  submitMenuForm() {
-
-    this.http.post(
-      `${this.baseUrl}/menu-items`,
-      {
-        ...this.newMenu,
-        restaurantId: this.menuRestaurantId
-      },
-      this.authHeader()
-    ).subscribe(() => {
-      alert("Menu Added ✅");
-      this.showMenuFormPopup = false;
-    });
-  }
-
-  confirmMenuAction() {
-
-    const id = this.menuItemId;
-
-    if (this.menuActionType === 'GET') {
-      this.http.get(
-        `${this.baseUrl}/menu-items/${id}`,
-        this.authHeader()
-      ).subscribe(res => {
-        this.menuItems = [res];
-        this.showMenuGetPopup = true;
-        this.showMenuIdPopup = false;
-      });
-    }
-
-    if (this.menuActionType === 'PUT') {
-      this.http.put(
-        `${this.baseUrl}/menu-items/${id}`,
-        {
-          ...this.newMenu,
-          restaurantId: this.menuRestaurantId
-        },
-        this.authHeader()
-      ).subscribe(() => {
-        alert("Menu Updated ✅");
-        this.showMenuIdPopup = false;
-      });
-    }
-
-    if (this.menuActionType === 'DELETE') {
-      this.http.delete(
-        `${this.baseUrl}/menu-items/${id}`,
-        this.authHeader()
-      ).subscribe(() => {
-        alert("Menu Deleted ✅");
-        this.showMenuIdPopup = false;
-      });
-    }
-  }
-
-  // ================= STYLE =================
   getMethodClass(method: string) {
     return {
       'bg-green-600': method === 'GET',
@@ -248,5 +103,264 @@ export class Hemanth {
       'bg-yellow-600': method === 'PUT',
       'bg-red-600': method === 'DELETE'
     };
+  }
+
+  // ================= RESTAURANTS (unchanged) =================
+  handleRestaurant(ep: any) {
+    const url = `${this.baseUrl}/restaurants`;
+
+    if (ep.method === 'GET') {
+      this.http.get<any>(url, this.authHeader()).subscribe({
+        next: (res) => {
+          this.restaurants = this.extractData(res);
+          this.showRestaurantsPopup = true;
+        },
+        error: (err) => this.showError(err)
+      });
+    }
+
+    if (ep.method === 'POST') {
+      this.resetRestaurantForm();
+      this.restaurantActionType = 'POST';
+      this.showRestaurantFormPopup = true;
+    }
+
+    if (ep.method === 'PUT') {
+      this.restaurantActionType = 'PUT';
+      this.restaurantActionId = '';
+      this.showRestaurantIdPopup = true;
+    }
+
+    if (ep.method === 'DELETE') {
+      this.restaurantActionType = 'DELETE';
+      this.restaurantActionId = '';
+      this.showRestaurantIdPopup = true;
+    }
+  }
+
+  submitRestaurant() {
+    const id = this.safe(this.restaurantActionId);
+    const url = `${this.baseUrl}/restaurants`;
+
+    if (this.restaurantActionType === 'POST') {
+      this.http.post(url, this.newRestaurant, this.authHeader()).subscribe({
+        next: () => {
+          alert("Restaurant Added ✅");
+          this.closeAllRestaurantPopups();
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    if (this.restaurantActionType === 'PUT' && this.showRestaurantIdPopup) {
+      if (!id) {
+        alert("Restaurant ID required");
+        return;
+      }
+      this.http.get<any>(`${url}/${id}`, this.authHeader()).subscribe({
+        next: (res) => {
+          const data = this.extractData(res)[0];
+          this.newRestaurant = {
+            restaurantName: data.restaurantName,
+            restaurantAddress: data.restaurantAddress,
+            restaurantPhone: data.restaurantPhone
+          };
+          this.showRestaurantIdPopup = false;
+          this.showRestaurantFormPopup = true;
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    if (this.restaurantActionType === 'PUT' && this.showRestaurantFormPopup) {
+      this.http.put(`${url}/${id}`, this.newRestaurant, this.authHeader()).subscribe({
+        next: () => {
+          alert("Restaurant Updated ✅");
+          this.closeAllRestaurantPopups();
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    if (this.restaurantActionType === 'DELETE') {
+      this.http.delete(`${url}/${id}`, this.authHeader()).subscribe({
+        next: () => {
+          alert("Restaurant Deleted ✅");
+          this.showRestaurantIdPopup = false;
+        },
+        error: (err) => this.showError(err)
+      });
+    }
+  }
+
+  resetRestaurantForm() {
+    this.newRestaurant = { restaurantName: '', restaurantAddress: '', restaurantPhone: '' };
+  }
+
+  closeAllRestaurantPopups() {
+    this.showRestaurantFormPopup = false;
+    this.showRestaurantIdPopup = false;
+    this.restaurantActionId = '';
+    this.resetRestaurantForm();
+  }
+
+  // ================= MENU (updated URLs to match backend) =================
+  handleMenu(ep: any) {
+    const rid = this.safe(this.menuRestaurantId);
+    if (!rid) {
+      alert('Please enter a Restaurant ID first');
+      return;
+    }
+
+    // POST /menu-items (restaurantId in body)
+    if (ep.method === 'POST' && ep.path === '/menu-items') {
+      this.resetMenuForm();
+      this.menuActionType = 'POST';
+      this.showMenuFormPopup = true;
+      return;
+    }
+
+    // GET /menu-items/restaurants/{restaurantId}/menu-items
+    if (ep.method === 'GET' && ep.path.includes('/restaurants/')) {
+      const url = `${this.baseUrl}/menu-items/restaurants/${rid}/menu-items`;
+      this.http.get<any>(url, this.authHeader()).subscribe({
+        next: (res) => {
+          this.menuItems = this.extractData(res);
+          this.showMenuGetPopup = true;
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    // GET /menu-items/{itemId}
+    if (ep.method === 'GET' && ep.path === '/menu-items/{itemId}') {
+      this.menuActionType = 'GET_BY_ID';
+      this.menuActionTitle = 'View Menu Item Details – Enter ID';
+      this.menuItemId = '';
+      this.showMenuIdPopup = true;
+      return;
+    }
+
+    // PUT /menu-items/{itemId}
+    if (ep.method === 'PUT') {
+      this.menuActionType = 'PUT';
+      this.menuActionTitle = 'Update Menu Item – Enter ID';
+      this.menuItemId = '';
+      this.showMenuIdPopup = true;
+      return;
+    }
+
+    // DELETE /menu-items/{itemId}
+    if (ep.method === 'DELETE') {
+      this.menuActionType = 'DELETE';
+      this.menuActionTitle = 'Delete Menu Item – Enter ID';
+      this.menuItemId = '';
+      this.showMenuIdPopup = true;
+      return;
+    }
+  }
+
+  confirmMenuAction() {
+    const id = this.safe(this.menuItemId);
+    const rid = this.safe(this.menuRestaurantId);
+    const base = `${this.baseUrl}/menu-items`;
+
+    if (!id) {
+      alert('Menu Item ID is required');
+      return;
+    }
+
+    // GET by ID
+    if (this.menuActionType === 'GET_BY_ID') {
+      this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
+        next: (res) => {
+          this.singleMenuItem = this.extractData(res)[0];
+          this.showMenuIdPopup = false;
+          this.showMenuItemDetailPopup = true;
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    // DELETE
+    if (this.menuActionType === 'DELETE') {
+      this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
+        next: () => {
+          alert("Menu Item Deleted ✅");
+          this.showMenuIdPopup = false;
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    // PUT Step 1: fetch existing item
+    if (this.menuActionType === 'PUT') {
+      this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
+        next: (res) => {
+          const data = this.extractData(res)[0];
+          this.newMenu = {
+            itemName: data.itemName,
+            itemDescription: data.itemDescription,
+            itemPrice: data.itemPrice
+          };
+          this.showMenuIdPopup = false;
+          this.showMenuFormPopup = true;
+        },
+        error: (err) => this.showError(err)
+      });
+    }
+  }
+
+  submitMenuForm() {
+    const rid = this.safe(this.menuRestaurantId);
+    const id = this.safe(this.menuItemId);
+    const base = `${this.baseUrl}/menu-items`;
+
+    const payload = {
+      ...this.newMenu,
+      itemPrice: parseFloat(this.newMenu.itemPrice),
+      restaurantId: rid
+    };
+
+    // POST /menu-items
+    if (this.menuActionType === 'POST') {
+      this.http.post(base, payload, this.authHeader()).subscribe({
+        next: () => {
+          alert("Menu Item Added ✅");
+          this.closeMenuPopups();
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    // PUT /menu-items/{itemId}
+    if (this.menuActionType === 'PUT') {
+      this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
+        next: () => {
+          alert("Menu Item Updated ✅");
+          this.closeMenuPopups();
+        },
+        error: (err) => this.showError(err)
+      });
+    }
+  }
+
+  resetMenuForm() {
+    this.newMenu = { itemName: '', itemDescription: '', itemPrice: '' };
+  }
+
+  closeMenuPopups() {
+    this.showMenuFormPopup = false;
+    this.showMenuIdPopup = false;
+    this.showMenuItemDetailPopup = false;
+    this.menuItemId = '';
+    this.resetMenuForm();
   }
 }
