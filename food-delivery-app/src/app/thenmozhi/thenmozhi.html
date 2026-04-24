@@ -1,10 +1,14 @@
 <div class="min-h-screen bg-black text-white p-6">
 
-  <!-- HEADER -->
-  <div class="text-center mb-10">
-    <h1 class="text-3xl font-bold text-indigo-400">{{ name }}</h1>
-    <p class="text-gray-400">{{ role }}</p>
-  </div>
+  <!-- HEADER with Back Button -->
+<div class="relative text-center mb-10">
+  <button (click)="goBack()" 
+          class="absolute left-0 top-1/2 -translate-y-1/2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-white text-sm font-medium transition">
+    ← Back
+  </button>
+  <h1 class="text-3xl font-bold text-indigo-400">{{ name }}</h1>
+  <p class="text-gray-400">{{ role }}</p>
+</div>
 
   <!-- ================= ORDERS ================= -->
   <h2 class="text-xl font-bold text-green-400 mb-4 max-w-4xl mx-auto">
@@ -67,35 +71,53 @@
   </div>
 
   <!-- ================= ORDERS LIST POPUP ================= -->
-  <div *ngIf="showOrdersListPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[900px]">
-      <h2 class="text-indigo-400 font-bold mb-4">Orders</h2>
-      <div class="overflow-x-auto max-h-[60vh] overflow-y-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-800">
-            <tr>
-              <th class="p-2">ID</th><th>Date</th><th>Customer</th><th>Restaurant</th><th>Driver</th><th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let o of orders" class="border-b border-gray-700">
-              <td class="p-2">{{ o.orderId }}</td>
-              <td>{{ o.orderDate | date:'short' }}</td>
-              <td>{{ o.customerId }}</td>
-              <td>{{ o.restaurantId }}</td>
-              <td>{{ o.deliveryDriverId || '-' }}</td>
-              <td>{{ o.orderStatus }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <button (click)="showOrdersListPopup=false"
-              class="mt-6 w-full bg-red-500 py-2 rounded">
-        Close
-      </button>
+  <!-- ================= ORDERS LIST POPUP ================= -->
+<div *ngIf="showOrdersListPopup"
+     class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-full max-w-6xl mx-4">
+    <h2 class="text-indigo-400 font-bold mb-4">Orders</h2>
+    <div class="max-h-[60vh] overflow-y-auto pr-2">
+      <table class="w-full text-sm table-fixed border-collapse">
+        <thead class="bg-gray-800 sticky top-0">
+          <tr>
+            <th class="p-2 text-left w-16">ID</th>
+            <th class="p-2 text-left w-44">Date</th>
+            <th class="p-2 text-left w-24">Customer</th>
+            <th class="p-2 text-left w-28">Restaurant</th>
+            <th class="p-2 text-left w-20">Driver</th>
+            <th class="p-2 text-left w-32">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let o of orders; let i = index" class="border-b border-gray-700 hover:bg-gray-800">
+            <td class="p-2 text-gray-300">{{ o.orderId }}</td>
+            <td class="p-2 text-gray-300">{{ o.orderDate | date:'short' }}</td>
+            <td class="p-2 text-gray-300">{{ o.customerId }}</td>
+            <td class="p-2 text-gray-300">{{ o.restaurantId }}</td>
+            <td class="p-2 text-gray-300">{{ o.deliveryDriverId || '—' }}</td>
+            <td class="p-2">
+              <span class="px-2 py-1 rounded text-xs font-medium"
+                    [ngClass]="{
+                      'bg-yellow-600 text-yellow-100': o.orderStatus === 'PENDING',
+                      'bg-blue-600 text-blue-100': o.orderStatus === 'CONFIRMED',
+                      'bg-purple-600 text-purple-100': o.orderStatus === 'OUT_FOR_DELIVERY',
+                      'bg-green-600 text-green-100': o.orderStatus === 'DELIVERED',
+                      'bg-red-600 text-red-100': o.orderStatus === 'CANCELLED'
+                    }">
+                {{ o.orderStatus }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p *ngIf="orders.length === 0" class="text-gray-400 text-center py-8">No orders found.</p>
     </div>
+    <button (click)="showOrdersListPopup=false"
+            class="mt-6 w-full bg-red-500 py-2 rounded">
+      Close
+    </button>
   </div>
+</div>
 
   <!-- ================= ORDER ID POPUP ================= -->
   <div *ngIf="showOrderIdPopup"
@@ -118,31 +140,27 @@
 
   <!-- ================= ORDER FORM POPUP (Place Order) ================= -->
   <div *ngIf="showOrderFormPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-indigo-400 text-xl font-bold mb-4">Place New Order</h2>
-      <input [(ngModel)]="newOrder.customerId"
-             placeholder="Customer ID"
-             type="number"
-             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-      <input [(ngModel)]="newOrder.restaurantId"
-             placeholder="Restaurant ID"
-             type="number"
-             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-      <input [(ngModel)]="newOrder.deliveryDriverId"
-             placeholder="Driver ID (optional)"
-             type="number"
-             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
-      <button (click)="submitOrderForm()"
-              class="w-full bg-green-500 py-2 rounded mb-2">
-        Place Order
-      </button>
-      <button (click)="showOrderFormPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
-        Cancel
-      </button>
-    </div>
+     class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+    <h2 class="text-indigo-400 text-xl font-bold mb-4">Place New Order</h2>
+    <input [(ngModel)]="newOrder.customerId"
+           placeholder="Customer ID"
+           type="number"
+           class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
+    <input [(ngModel)]="newOrder.restaurantId"
+           placeholder="Restaurant ID"
+           type="number"
+           class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+    <button (click)="submitOrderForm()"
+            class="w-full bg-green-500 py-2 rounded mb-2">
+      Place Order
+    </button>
+    <button (click)="showOrderFormPopup=false"
+            class="w-full bg-red-500 py-2 rounded">
+      Cancel
+    </button>
   </div>
+</div>
 
   <!-- ================= ORDER DETAIL POPUP ================= -->
   <div *ngIf="showOrderDetailPopup"

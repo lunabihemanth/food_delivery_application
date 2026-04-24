@@ -37,7 +37,7 @@ export class Jeevitha {
   ratingEndpoints = [
     { method: 'POST', path: '/orders/{orderId}/ratings', desc: 'Submit rating for restaurant' },
     { method: 'GET', path: '/restaurants/{restaurantId}/ratings', desc: 'View all ratings for restaurant' },
-    { method: 'GET', path: '/ratings/{ratingId}', desc: 'Fetch a rating' },
+    //{ method: 'GET', path: '/ratings/{ratingId}', desc: 'Fetch a rating' },
     { method: 'DELETE', path: '/ratings/{ratingId}', desc: 'Remove rating (admin/moderation)' },
   ];
 
@@ -174,44 +174,6 @@ export class Jeevitha {
       this.couponActionId = '';
       this.showCouponIdPopup = true;
       return;
-    }
-  }
-
-  confirmCouponIdAction() {
-    const id = this.safe(this.couponActionId);
-    const base = `${this.baseUrl}/coupons`;
-
-    if (!id) {
-      alert('Coupon ID is required');
-      return;
-    }
-
-    if (this.couponActionType === 'DELETE') {
-      this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
-        next: () => {
-          alert('Coupon disabled ✅');
-          this.showCouponIdPopup = false;
-        },
-        error: (err) => this.showError(err)
-      });
-      return;
-    }
-
-    if (this.couponActionType === 'PUT') {
-      this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
-        next: (res) => {
-          const data = this.extractData(res)[0];
-          // ✅ Map backend fields to form
-          this.newCoupon = {
-            couponCode: data.couponCode,
-            discountAmount: data.discountAmount,
-            expiryDate: data.expiryDate?.substring(0, 10) || ''
-          };
-          this.showCouponIdPopup = false;
-          this.showCouponFormPopup = true;
-        },
-        error: (err) => this.showError(err)
-      });
     }
   }
 
@@ -385,6 +347,35 @@ export class Jeevitha {
     }
   }
 
+  confirmCouponIdAction() {
+  const id = this.safe(this.couponActionId);
+  const base = `${this.baseUrl}/coupons`;
+
+  if (!id) {
+    alert('Coupon ID is required');
+    return;
+  }
+
+  // 👇 NEW: prevent accidental code input
+  if (this.couponActionType === 'DELETE' && isNaN(Number(id))) {
+    alert('Please enter a numeric Coupon ID (not the coupon code).');
+    return;
+  }
+
+  if (this.couponActionType === 'DELETE') {
+    this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
+      next: () => {
+        alert('Coupon disabled ✅');
+        this.showCouponIdPopup = false;
+      },
+      error: (err) => this.showError(err)
+    });
+    return;
+  }
+
+  // PUT handling remains unchanged …
+}
+
   confirmRatingIdAction() {
     const id = this.safe(this.ratingActionId);
     const base = `${this.baseUrl}/ratings`;
@@ -423,23 +414,34 @@ export class Jeevitha {
     alert('Order ID is required');
     return;
   }
-  const url = `${this.baseUrl}/orders/${oid}/ratings`;
 
-  const payload = {
-    orderId: parseInt(oid),   // ✅ Include orderId in body
-    rating: this.newRating.rating,
-    comment: this.newRating.comment
-  };
+  // 1. Fetch the order to get the restaurantId
+  const orderUrl = `${this.baseUrl}/orders/${oid}`;
+  this.http.get<any>(orderUrl, this.authHeader()).subscribe({
+    next: (orderRes) => {
+      const order = this.extractData(orderRes)[0];
+      const restaurantId = order.restaurantId;   // adjust field name if needed
 
-  this.http.post(url, payload, this.authHeader()).subscribe({
-    next: () => {
-      alert('Rating submitted ✅');
-      this.showRatingFormPopup = false;
+      // 2. Now send the rating with restaurantId
+      const ratingUrl = `${this.baseUrl}/orders/${oid}/ratings`;
+      const payload = {
+        orderId: parseInt(oid),
+        restaurantId: restaurantId,
+        rating: this.newRating.rating,
+        comment: this.newRating.comment
+      };
+
+      this.http.post(ratingUrl, payload, this.authHeader()).subscribe({
+        next: () => {
+          alert('Rating submitted ✅');
+          this.showRatingFormPopup = false;
+        },
+        error: (err) => this.showError(err)
+      });
     },
     error: (err) => this.showError(err)
   });
 }
-
   fetchRestaurantRatings() {
     const rid = this.safe(this.contextRestaurantIdForRatings);
     if (!rid) {

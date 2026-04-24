@@ -78,9 +78,21 @@ public class OrdersController {
         return ResponseEntity.ok(build(200, "Driver assigned successfully", result));
     }
 
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Integer orderId,
+                                            @RequestBody Map<String, String> statusRequest) {
+        String status = statusRequest.get("status");
+        if (status == null || status.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(build(400, "Status field is required", null));
+        }
+        OrdersResponseDTO result = ordersService.updateOrderStatus(orderId, status);
+        return ResponseEntity.ok(build(200, "Order status updated", result));
+    }
+
     @PutMapping("/{orderId}/delivery-status")
     public ResponseEntity<?> updateDeliveryStatus(@PathVariable Integer orderId,
-                                                  @RequestBody Map<String, String> statusRequest) {
+                                                @RequestBody Map<String, String> statusRequest) {
         String status = statusRequest.get("status");
         if (status == null || status.isBlank()) {
             return ResponseEntity.badRequest()

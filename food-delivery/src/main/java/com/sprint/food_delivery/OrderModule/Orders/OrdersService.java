@@ -140,30 +140,6 @@ public class OrdersService implements IOrdersService {
         return map(repository.save(order));
     }
 
-    @Override
-    public OrdersResponseDTO updateDeliveryStatus(Integer orderId, String status) {
-        Orders order = repository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-
-        if (!"OUT_FOR_DELIVERY".equals(status) && !"DELIVERED".equals(status)) {
-            throw new BadRequestException("Invalid delivery status. Allowed: OUT_FOR_DELIVERY, DELIVERED");
-        }
-
-        String currentStatus = order.getOrderStatus();
-        if (!isValidTransition(currentStatus, status)) {
-            throw new BadRequestException("Invalid status transition from " + currentStatus + " to " + status);
-        }
-
-        order.setOrderStatus(status);
-
-        if ("DELIVERED".equals(status)) {
-            // Optional: set delivered timestamp field if you add one
-            // order.setDeliveredAt(LocalDateTime.now());
-        }
-
-        return map(repository.save(order));
-    }
-
 
     // ---------- HELPER METHODS ----------
 
@@ -203,5 +179,26 @@ public class OrdersService implements IOrdersService {
                 o.getDeliveryDriver() != null ? o.getDeliveryDriver().getDriverId() : null,
                 o.getOrderStatus()
         );
+    }
+
+    @Override
+    public OrdersResponseDTO updateDeliveryStatus(Integer orderId, String status) {
+        Orders order = repository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        // Only enforce that the status must be a valid delivery status
+        if (!"OUT_FOR_DELIVERY".equals(status) && !"DELIVERED".equals(status)) {
+            throw new BadRequestException("Invalid delivery status. Allowed: OUT_FOR_DELIVERY, DELIVERED");
+        }
+
+        // 👇 Remove the transition check – driver can always set these statuses
+        order.setOrderStatus(status);
+        return map(repository.save(order));
+    }
+
+    @Override
+    public OrdersResponseDTO updateOrderStatus(Integer orderId, String status) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'updateOrderStatus'");
     }
 }

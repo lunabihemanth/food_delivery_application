@@ -10,6 +10,7 @@ import com.sprint.food_delivery.Exception.BadRequestException;
 import com.sprint.food_delivery.Exception.ResourceNotFoundException;
 import com.sprint.food_delivery.OrderModule.Orders.Orders;
 import com.sprint.food_delivery.OrderModule.Orders.OrdersRepository;
+import com.sprint.food_delivery.OrderModule.Orders.OrdersResponseDTO;
 import com.sprint.food_delivery.RestaurantsModule.MenuItems.MenuItems;
 import com.sprint.food_delivery.RestaurantsModule.MenuItems.MenuItemsRepository;
 
@@ -136,5 +137,22 @@ public class OrderItemsService implements IOrderItemsService {
                 oi.getOrder().getOrderId(),
                 oi.getMenuItem().getItemId()
         );
+    }
+
+    @Override
+    public OrderItemsResponseDTO updateQuantity(Integer orderItemId, Integer quantity) {
+        OrderItems existing = repository.findById(orderItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order item not found with id: " + orderItemId));
+
+        validateQuantity(quantity);
+
+        existing.setQuantity(quantity);
+        return map(repository.save(existing));
+    }
+
+    @Override
+    public OrdersResponseDTO updateDeliveryStatus(Integer orderId, String status) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'updateDeliveryStatus'");
     }
 }

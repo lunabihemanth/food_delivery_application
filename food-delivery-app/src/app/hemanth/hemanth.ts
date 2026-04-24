@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-hemanth',
@@ -12,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class Hemanth {
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
 
@@ -23,8 +24,9 @@ export class Hemanth {
   restaurantEndpoints = [
     { method: 'GET', path: '/restaurants', desc: 'List restaurants' },
     { method: 'POST', path: '/restaurants', desc: 'Add restaurant' },
-    { method: 'PUT', path: '/restaurants/{id}', desc: 'Update restaurant' },
-    { method: 'DELETE', path: '/restaurants/{id}', desc: 'Delete restaurant' },
+    { method: 'GET', path: '/restaurants/{restaurantId}', desc: 'View restaurant details' },
+    { method: 'PUT', path: '/restaurants/{restaurantId}', desc: 'Update restaurant' },
+    { method: 'DELETE', path: '/restaurants/{restaurantId}', desc: 'Delete restaurant' },
   ];
 
   menuEndpoints = [
@@ -37,10 +39,12 @@ export class Hemanth {
 
   // ================= STATE =================
   restaurants: any[] = [];
+  singleRestaurant: any = null;
   menuItems: any[] = [];
   singleMenuItem: any = null;
 
   restaurantActionId = '';
+  restaurantActionTitle = '';
   menuRestaurantId = '';
   menuItemId = '';
 
@@ -58,6 +62,7 @@ export class Hemanth {
 
   // ================= POPUP FLAGS =================
   showRestaurantsPopup = false;
+  showRestaurantDetailPopup = false;
   showRestaurantFormPopup = false;
   showRestaurantIdPopup = false;
 
@@ -105,11 +110,15 @@ export class Hemanth {
     };
   }
 
-  // ================= RESTAURANTS (unchanged) =================
+  goBack() {
+    this.location.back();
+  }
+
+  // ================= RESTAURANTS =================
   handleRestaurant(ep: any) {
     const url = `${this.baseUrl}/restaurants`;
 
-    if (ep.method === 'GET') {
+    if (ep.method === 'GET' && ep.path === '/restaurants') {
       this.http.get<any>(url, this.authHeader()).subscribe({
         next: (res) => {
           this.restaurants = this.extractData(res);
@@ -117,24 +126,39 @@ export class Hemanth {
         },
         error: (err) => this.showError(err)
       });
+      return;
     }
 
     if (ep.method === 'POST') {
       this.resetRestaurantForm();
       this.restaurantActionType = 'POST';
       this.showRestaurantFormPopup = true;
+      return;
+    }
+
+    // NEW: GET by ID
+    if (ep.method === 'GET' && ep.path === '/restaurants/{restaurantId}') {
+      this.restaurantActionType = 'GET_BY_ID';
+      this.restaurantActionTitle = 'View Restaurant Details – Enter ID';
+      this.restaurantActionId = '';
+      this.showRestaurantIdPopup = true;
+      return;
     }
 
     if (ep.method === 'PUT') {
       this.restaurantActionType = 'PUT';
+      this.restaurantActionTitle = 'Update Restaurant – Enter ID';
       this.restaurantActionId = '';
       this.showRestaurantIdPopup = true;
+      return;
     }
 
     if (ep.method === 'DELETE') {
       this.restaurantActionType = 'DELETE';
+      this.restaurantActionTitle = 'Delete Restaurant – Enter ID';
       this.restaurantActionId = '';
       this.showRestaurantIdPopup = true;
+      return;
     }
   }
 
@@ -153,6 +177,24 @@ export class Hemanth {
       return;
     }
 
+    // GET by ID
+    if (this.restaurantActionType === 'GET_BY_ID') {
+      if (!id) {
+        alert("Restaurant ID required");
+        return;
+      }
+      this.http.get<any>(`${url}/${id}`, this.authHeader()).subscribe({
+        next: (res) => {
+          this.singleRestaurant = this.extractData(res)[0];
+          this.showRestaurantIdPopup = false;
+          this.showRestaurantDetailPopup = true;
+        },
+        error: (err) => this.showError(err)
+      });
+      return;
+    }
+
+    // PUT step 1 (ask for ID then fetch current data)
     if (this.restaurantActionType === 'PUT' && this.showRestaurantIdPopup) {
       if (!id) {
         alert("Restaurant ID required");
@@ -174,6 +216,7 @@ export class Hemanth {
       return;
     }
 
+    // PUT step 2 (update)
     if (this.restaurantActionType === 'PUT' && this.showRestaurantFormPopup) {
       this.http.put(`${url}/${id}`, this.newRestaurant, this.authHeader()).subscribe({
         next: () => {
@@ -185,6 +228,7 @@ export class Hemanth {
       return;
     }
 
+    // DELETE
     if (this.restaurantActionType === 'DELETE') {
       this.http.delete(`${url}/${id}`, this.authHeader()).subscribe({
         next: () => {
@@ -203,11 +247,12 @@ export class Hemanth {
   closeAllRestaurantPopups() {
     this.showRestaurantFormPopup = false;
     this.showRestaurantIdPopup = false;
+    this.showRestaurantDetailPopup = false;
     this.restaurantActionId = '';
     this.resetRestaurantForm();
   }
 
-  // ================= MENU (updated URLs to match backend) =================
+  // ================= MENU =================
   handleMenu(ep: any) {
     const rid = this.safe(this.menuRestaurantId);
     if (!rid) {
@@ -215,7 +260,6 @@ export class Hemanth {
       return;
     }
 
-    // POST /menu-items (restaurantId in body)
     if (ep.method === 'POST' && ep.path === '/menu-items') {
       this.resetMenuForm();
       this.menuActionType = 'POST';
@@ -223,7 +267,6 @@ export class Hemanth {
       return;
     }
 
-    // GET /menu-items/restaurants/{restaurantId}/menu-items
     if (ep.method === 'GET' && ep.path.includes('/restaurants/')) {
       const url = `${this.baseUrl}/menu-items/restaurants/${rid}/menu-items`;
       this.http.get<any>(url, this.authHeader()).subscribe({
@@ -236,7 +279,6 @@ export class Hemanth {
       return;
     }
 
-    // GET /menu-items/{itemId}
     if (ep.method === 'GET' && ep.path === '/menu-items/{itemId}') {
       this.menuActionType = 'GET_BY_ID';
       this.menuActionTitle = 'View Menu Item Details – Enter ID';
@@ -245,7 +287,6 @@ export class Hemanth {
       return;
     }
 
-    // PUT /menu-items/{itemId}
     if (ep.method === 'PUT') {
       this.menuActionType = 'PUT';
       this.menuActionTitle = 'Update Menu Item – Enter ID';
@@ -254,7 +295,6 @@ export class Hemanth {
       return;
     }
 
-    // DELETE /menu-items/{itemId}
     if (ep.method === 'DELETE') {
       this.menuActionType = 'DELETE';
       this.menuActionTitle = 'Delete Menu Item – Enter ID';
@@ -274,7 +314,6 @@ export class Hemanth {
       return;
     }
 
-    // GET by ID
     if (this.menuActionType === 'GET_BY_ID') {
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
@@ -287,7 +326,6 @@ export class Hemanth {
       return;
     }
 
-    // DELETE
     if (this.menuActionType === 'DELETE') {
       this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
         next: () => {
@@ -299,7 +337,6 @@ export class Hemanth {
       return;
     }
 
-    // PUT Step 1: fetch existing item
     if (this.menuActionType === 'PUT') {
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
@@ -328,7 +365,6 @@ export class Hemanth {
       restaurantId: rid
     };
 
-    // POST /menu-items
     if (this.menuActionType === 'POST') {
       this.http.post(base, payload, this.authHeader()).subscribe({
         next: () => {
@@ -340,7 +376,6 @@ export class Hemanth {
       return;
     }
 
-    // PUT /menu-items/{itemId}
     if (this.menuActionType === 'PUT') {
       this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
         next: () => {

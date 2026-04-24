@@ -46,6 +46,8 @@
     </div>
   </div>
 
+  
+
   <!-- ================= RATINGS ================= -->
   <h2 class="text-xl font-bold text-yellow-400 mt-10 mb-4 max-w-4xl mx-auto">Ratings & Reviews APIs</h2>
   <div class="max-w-4xl mx-auto space-y-6">
@@ -62,33 +64,35 @@
   </div>
 
   <!-- ================= COUPONS LIST POPUP ================= -->
-  <div *ngIf="showCouponsListPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[800px]">
-      <h2 class="text-amber-400 font-bold mb-4">All Coupons</h2>
-      <div class="overflow-x-auto max-h-[60vh] overflow-y-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-800">
-            <tr>
-              <th class="p-2">ID</th>
-              <th>Code</th>
-              <th>Discount Amount</th>
-              <th>Expiry Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let c of coupons" class="border-b border-gray-700">
-              <td class="p-2">{{ c.couponId }}</td>
-              <td>{{ c.couponCode }}</td>
-              <td>{{ c.discountAmount | percent }}</td>
-              <td>{{ c.expiryDate | date:'shortDate' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <button (click)="showCouponsListPopup=false" class="mt-6 w-full bg-red-500 py-2 rounded">Close</button>
+<div *ngIf="showCouponsListPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[800px]">
+    <h2 class="text-amber-400 font-bold mb-4">All Coupons</h2>
+    <div class="overflow-x-auto max-h-[60vh] overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-800">
+          <tr>
+            <th class="p-2 text-left">ID</th>
+            <th class="p-2 text-left">Code</th>
+            <th class="p-2 text-left">Discount Amount</th>
+            <th class="p-2 text-left">Expiry Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of coupons" class="border-b border-gray-700 hover:bg-gray-800">
+            <td class="p-2">{{ c.couponId }}</td>
+            <td class="p-2">{{ c.couponCode }}</td>
+            <td class="p-2">{{ c.discountAmount | number:'1.2-2' }}</td>
+            <td class="p-2">{{ c.expiryDate | date:'mediumDate' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+    <button (click)="showCouponsListPopup=false"
+            class="mt-6 w-full bg-red-500 py-2 rounded">
+      Close
+    </button>
   </div>
-
+</div>
   <!-- ================= COUPON FORM POPUP ================= -->
   <div *ngIf="showCouponFormPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
     <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[450px]">
@@ -102,14 +106,23 @@
   </div>
 
   <!-- ================= COUPON ID POPUP ================= -->
-  <div *ngIf="showCouponIdPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-amber-400 text-xl font-bold mb-4">{{ couponActionTitle }}</h2>
-      <input [(ngModel)]="couponActionId" placeholder="Coupon ID" class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
-      <button (click)="confirmCouponIdAction()" class="w-full bg-amber-500 py-2 rounded mb-2">Next</button>
-      <button (click)="showCouponIdPopup=false" class="w-full bg-red-500 py-2 rounded">Cancel</button>
-    </div>
+<div *ngIf="showCouponIdPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+    <h2 class="text-amber-400 text-xl font-bold mb-4">{{ couponActionTitle }}</h2>
+    <input [(ngModel)]="couponActionId"
+           type="number"            
+           placeholder="Numeric Coupon ID (e.g. 5)"
+           class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+    <button (click)="confirmCouponIdAction()"
+            class="w-full bg-amber-500 py-2 rounded mb-2">
+      Next
+    </button>
+    <button (click)="showCouponIdPopup=false"
+            class="w-full bg-red-500 py-2 rounded">
+      Cancel
+    </button>
   </div>
+</div>
 
   <!-- ================= VALIDATE COUPON POPUP ================= -->
   <div *ngIf="showValidateCouponPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
@@ -135,20 +148,25 @@
     </div>
   </div>
 
-  <!-- ================= APPLY COUPON POPUP ================= -->
-    <div *ngIf="showApplyCouponPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-        <h2 class="text-orange-400 text-xl font-bold mb-4">Apply Coupon to Order</h2>
-        <p class="text-gray-400 mb-2">Order ID: {{ contextOrderId }}</p>
-        <input [(ngModel)]="contextCouponIdForApply" 
-            placeholder="Coupon ID (numeric)" 
-            type="number"
-            class="w-full p-2 mb-2 bg-gray-800 border border-gray-700 rounded"/>
-        <p class="text-gray-400 mb-4 text-xs">ℹ️ Use the numeric Coupon ID (e.g., 5), not the coupon code.</p>
-        <button (click)="submitApplyCoupon()" class="w-full bg-orange-500 py-2 rounded mb-2">Apply</button>
-        <button (click)="showApplyCouponPopup=false" class="w-full bg-red-500 py-2 rounded">Cancel</button>
+  <!-- ================= APPLIED COUPONS POPUP ================= -->
+<div *ngIf="showAppliedCouponsPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[700px]">
+    <h2 class="text-orange-400 font-bold mb-4">Applied Coupons for Order {{ contextOrderId }}</h2>
+    <div class="grid grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+      <div *ngFor="let c of appliedCoupons" class="bg-gray-800 p-4 rounded-lg">
+        <p class="text-xs text-gray-400">Coupon ID: {{ c.couponId }}</p>
+        <p class="text-gray-300">Code: <span class="text-white font-semibold">{{ c.couponCode }}</span></p>
+        <p class="text-gray-300">Discount: ₹{{ c.discountAmount | number:'1.2-2' }}</p>
+        <p class="text-gray-300">Expires: {{ c.expiryDate | date:'mediumDate' }}</p>
+      </div>
+      <p *ngIf="appliedCoupons.length === 0" class="text-gray-400 text-center py-4">No coupons applied.</p>
     </div>
-    </div>
+    <button (click)="showAppliedCouponsPopup=false"
+            class="mt-6 w-full bg-red-500 py-2 rounded">
+      Close
+    </button>
+  </div>
+</div>
 
   <!-- ================= REMOVE COUPON POPUP ================= -->
     <div *ngIf="showRemoveCouponPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
@@ -163,6 +181,20 @@
         <button (click)="showRemoveCouponPopup=false" class="w-full bg-gray-600 py-2 rounded">Cancel</button>
     </div>
     </div>
+
+    <!-- ================= APPLY COUPON POPUP ================= -->
+<div *ngIf="showApplyCouponPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
+    <h2 class="text-orange-400 text-xl font-bold mb-4">Apply Coupon to Order</h2>
+    <p class="text-gray-400 mb-2">Order ID: {{ contextOrderId }}</p>
+    <input [(ngModel)]="contextCouponIdForApply" 
+           placeholder="Coupon ID (numeric)" 
+           type="number"
+           class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+    <button (click)="submitApplyCoupon()" class="w-full bg-orange-500 py-2 rounded mb-2">Apply</button>
+    <button (click)="showApplyCouponPopup=false" class="w-full bg-red-500 py-2 rounded">Cancel</button>
+  </div>
+</div>
 
   <!-- ================= APPLIED COUPONS POPUP ================= -->
   <div *ngIf="showAppliedCouponsPopup" class="fixed inset-0 bg-black/70 flex items-center justify-center">

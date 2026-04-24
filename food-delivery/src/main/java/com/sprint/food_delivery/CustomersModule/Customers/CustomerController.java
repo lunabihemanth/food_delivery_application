@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sprint.food_delivery.OrderModule.Orders.IOrdersService;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,6 +28,9 @@ public class CustomerController {
 
     @Autowired
     private ICustomerService customerService;
+
+    @Autowired
+    private IOrdersService orderService;
 
     // helper method to build response structure
     private Map<String, Object> buildResponse(int status, String message, Object data) {
@@ -91,4 +96,12 @@ public class CustomerController {
                 buildResponse(200, "Customer deleted successfully", null)
         );
     }
+
+    //get customer by order
+    @GetMapping("/{customerId}/orders")
+        public ResponseEntity<?> getOrdersByCustomer(@PathVariable Integer customerId) {
+        return ResponseEntity.ok(
+                buildResponse(200, "Customer orders fetched", orderService.getByCustomerId(customerId))
+        );
+}
 }

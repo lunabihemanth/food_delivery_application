@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-kisol',
@@ -12,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class Kisol {
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
   name = 'Kisol';
@@ -45,7 +46,6 @@ export class Kisol {
   orderIdForStatus = '';
   deliveryStatus = 'OUT_FOR_DELIVERY';
 
-  // ✅ Changed vehicleNumber → driverVehicle
   newDriver = {
     driverName: '',
     driverPhone: '',
@@ -98,6 +98,10 @@ export class Kisol {
       'bg-yellow-600': method === 'PUT',
       'bg-red-600': method === 'DELETE'
     };
+  }
+
+  goBack() {
+    this.location.back();
   }
 
   // ================= DRIVER HANDLERS =================
@@ -186,7 +190,7 @@ export class Kisol {
           this.newDriver = {
             driverName: data.driverName,
             driverPhone: data.driverPhone,
-            driverVehicle: data.driverVehicle    // ✅ Updated
+            driverVehicle: data.driverVehicle
           };
           this.showDriverIdPopup = false;
           this.showDriverFormPopup = true;

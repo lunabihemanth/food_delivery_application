@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-thenmozhi',
@@ -12,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class Thenmozhi {
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
   name = 'Thenmozhi';
@@ -23,7 +24,7 @@ export class Thenmozhi {
     { method: 'POST', path: '/orders', desc: 'Place a new order' },
     { method: 'GET', path: '/orders', desc: 'List all orders (admin view)' },
     { method: 'GET', path: '/orders/{orderId}', desc: 'Fetch order details' },
-    { method: 'PUT', path: '/orders/{orderId}/status', desc: 'Update order status (Pending → Confirmed → Delivered / Cancelled)' },
+    { method: 'PUT', path: '/orders/{orderId}/status', desc: 'Update order status (Pending → Confirmed → Out for Delivery / Cancelled)' },
     { method: 'GET', path: '/customers/{customerId}/orders', desc: 'Fetch all orders of a customer' },
     { method: 'GET', path: '/restaurants/{restaurantId}/orders', desc: 'Fetch orders for a restaurant' },
   ];
@@ -41,25 +42,22 @@ export class Thenmozhi {
   singleOrder: any = null;
   singleOrderItem: any = null;
 
-  // For order operations
   orderActionId = '';
   orderActionType = '';
   orderActionTitle = '';
 
-  // Context IDs for filtered queries
   contextCustomerId = '';
   contextRestaurantId = '';
-  contextOrderId = '';   // for order items context
+  contextOrderId = '';
 
-  // For order item operations
   orderItemActionId = '';
   orderItemActionType = '';
   orderItemActionTitle = '';
 
+  // ✅ No driver field for customer
   newOrder = {
     customerId: '',
-    restaurantId: '',
-    deliveryDriverId: ''
+    restaurantId: ''
   };
 
   newOrderItem = {
@@ -67,6 +65,7 @@ export class Thenmozhi {
     quantity: 1
   };
 
+  // ✅ Status dropdown – DELIVERED is set by driver, not here
   orderStatusUpdate = {
     status: 'CONFIRMED'
   };
@@ -78,8 +77,8 @@ export class Thenmozhi {
   showOrderDetailPopup = false;
   showOrderStatusPopup = false;
 
-  showCustomerIdInputPopup = false;   // for GET /customers/{id}/orders
-  showRestaurantIdInputPopup = false; // for GET /restaurants/{id}/orders
+  showCustomerIdInputPopup = false;
+  showRestaurantIdInputPopup = false;
 
   showOrderItemsListPopup = false;
   showOrderItemFormPopup = false;
@@ -121,11 +120,14 @@ export class Thenmozhi {
     };
   }
 
+  goBack() {
+    this.location.back();
+  }
+
   // ================= ORDER HANDLERS =================
   handleOrder(ep: any) {
     const base = `${this.baseUrl}/orders`;
 
-    // POST /orders
     if (ep.method === 'POST') {
       this.resetOrderForm();
       this.orderActionType = 'POST';
@@ -133,7 +135,6 @@ export class Thenmozhi {
       return;
     }
 
-    // GET /orders (all)
     if (ep.method === 'GET' && ep.path === '/orders') {
       this.http.get<any>(base, this.authHeader()).subscribe({
         next: (res) => {
@@ -145,7 +146,6 @@ export class Thenmozhi {
       return;
     }
 
-    // GET /orders/{orderId}
     if (ep.method === 'GET' && ep.path === '/orders/{orderId}') {
       this.orderActionType = 'GET_BY_ID';
       this.orderActionTitle = 'View Order Details – Enter Order ID';
@@ -154,7 +154,6 @@ export class Thenmozhi {
       return;
     }
 
-    // PUT /orders/{orderId}/status
     if (ep.method === 'PUT' && ep.path.includes('/status')) {
       this.orderActionType = 'UPDATE_STATUS';
       this.orderActionTitle = 'Update Order Status – Enter Order ID';
@@ -164,14 +163,12 @@ export class Thenmozhi {
       return;
     }
 
-    // GET /customers/{customerId}/orders
     if (ep.method === 'GET' && ep.path.includes('/customers/')) {
       this.contextCustomerId = '';
       this.showCustomerIdInputPopup = true;
       return;
     }
 
-    // GET /restaurants/{restaurantId}/orders
     if (ep.method === 'GET' && ep.path.includes('/restaurants/')) {
       this.contextRestaurantId = '';
       this.showRestaurantIdInputPopup = true;
@@ -210,7 +207,6 @@ export class Thenmozhi {
     const id = this.safe(this.orderActionId);
     const url = `${this.baseUrl}/orders/${id}/status`;
     const payload = { status: this.orderStatusUpdate.status };
-
     this.http.put(url, payload, this.authHeader()).subscribe({
       next: () => {
         alert('Order status updated ✅');
@@ -223,21 +219,21 @@ export class Thenmozhi {
 
   submitOrderForm() {
     const base = `${this.baseUrl}/orders`;
+    // ✅ Send date and status to pass validation; the service will ignore/override them
     const payload = {
-      customerId: parseInt(this.newOrder.customerId),
-      restaurantId: parseInt(this.newOrder.restaurantId),
-      deliveryDriverId: this.newOrder.deliveryDriverId ? parseInt(this.newOrder.deliveryDriverId) : null
+      customerId: parseInt(this.newOrder.customerId, 10),
+      restaurantId: parseInt(this.newOrder.restaurantId, 10),
+      orderDate: new Date().toISOString(),
+      orderStatus: 'PENDING'
     };
 
-    if (this.orderActionType === 'POST') {
-      this.http.post(base, payload, this.authHeader()).subscribe({
-        next: () => {
-          alert('Order Placed ✅');
-          this.closeOrderPopups();
-        },
-        error: (err) => this.showError(err)
-      });
-    }
+    this.http.post(base, payload, this.authHeader()).subscribe({
+      next: () => {
+        alert('Order Placed ✅');
+        this.closeOrderPopups();
+      },
+      error: (err) => this.showError(err)
+    });
   }
 
   fetchCustomerOrders() {
@@ -275,7 +271,7 @@ export class Thenmozhi {
   }
 
   resetOrderForm() {
-    this.newOrder = { customerId: '', restaurantId: '', deliveryDriverId: '' };
+    this.newOrder = { customerId: '', restaurantId: '' };
   }
 
   closeOrderPopups() {
@@ -356,7 +352,7 @@ export class Thenmozhi {
     }
 
     if (this.orderItemActionType === 'PUT') {
-      // Fetch existing to prefill? Or just ask for new quantity
+      // Fetch existing item to pre-fill quantity
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
           const data = this.extractData(res)[0];
@@ -378,7 +374,7 @@ export class Thenmozhi {
     const base = `${this.baseUrl}/order-items`;
 
     const payload = {
-      itemId: parseInt(this.newOrderItem.itemId),
+      itemId: parseInt(this.newOrderItem.itemId, 10),
       quantity: this.newOrderItem.quantity
     };
 
@@ -395,6 +391,7 @@ export class Thenmozhi {
     }
 
     if (this.orderItemActionType === 'PUT') {
+      // Send ONLY quantity, not the whole payload
       this.http.put(`${base}/${id}`, { quantity: payload.quantity }, this.authHeader()).subscribe({
         next: () => {
           alert('Quantity updated ✅');
