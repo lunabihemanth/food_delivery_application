@@ -19,9 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sprint.food_delivery.OrderModule.Orders.IOrdersService;
 
 import jakarta.validation.Valid;
-
+//@RestController = @Controller + @ResponseBody
+//This class will send data directly to the user, not a webpage.
 @RestController
-@RequestMapping("/drivers")
+@RequestMapping("/drivers") //It is just a base URL (starting path) for your API
 public class DeliveryDriversController {
 
     @Autowired
@@ -35,12 +36,17 @@ public class DeliveryDriversController {
         r.put("status", s);
         r.put("message", m);
         r.put("data", d);
+        //Timestamp = current date + current time
         r.put("timestamp", LocalDateTime.now());
         return r;
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody DeliveryDriversRequestDTO dto) {
+    //ResponseEntity<?> here <?> means any type of data
+    //@valid = Check the input data before using it
+    //@RequestBody = takes JSON data from request and converts it into a Java object
+    //ResponseEntity = a Spring class used to send response (data + HTTP status) back to the client
+    public ResponseEntity<?> create(@Valid  @RequestBody DeliveryDriversRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(build(201, "Driver created", service.save(dto)));
     }
