@@ -11,106 +11,93 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfigfile {
 
-    // 🔐 Password Encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 👤 USERS
     @Bean
     public InMemoryUserDetailsManager userDetailsService(PasswordEncoder encoder) {
-
         UserDetails hemanth = User.withUsername("hemanth")
                 .password(encoder.encode("hemanth123"))
                 .roles("HEMANTH")
                 .build();
-
         UserDetails kisol = User.withUsername("kisol")
                 .password(encoder.encode("kisol123"))
                 .roles("KISOL")
                 .build();
-
         UserDetails thenmozli = User.withUsername("thenmozli")
                 .password(encoder.encode("thenmozli123"))
                 .roles("THENMOZLI")
                 .build();
-
         UserDetails annie = User.withUsername("annie")
                 .password(encoder.encode("annie123"))
                 .roles("ANNIE")
                 .build();
-
         UserDetails jeevitha = User.withUsername("jeevitha")
                 .password(encoder.encode("jeevitha123"))
                 .roles("JEEVITHA")
                 .build();
-
         UserDetails admin = User.withUsername("admin")
                 .password(encoder.encode("admin123"))
                 .roles("ADMIN")
                 .build();
 
-        return new InMemoryUserDetailsManager(
-                hemanth, kisol, thenmozli, annie, jeevitha, admin
-        );
+        return new InMemoryUserDetailsManager(hemanth, kisol, thenmozli, annie, jeevitha, admin);
     }
 
-    // 🛡️ SECURITY CONFIG
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         http
-            // 🌐 CORS (Angular)
-            .cors(Customizer.withDefaults())
-
-            // ❌ Disable CSRF for REST
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-
-            // ❌ Stateless (no session)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-
-            // 🔐 Authorization Rules
             .authorizeHttpRequests(auth -> auth
-
+                // Annie – Customer & Address APIs
                 .requestMatchers("/customers/**", "/addresses/**")
-                    .hasAnyRole("HEMANTH", "ADMIN")
-
-                .requestMatchers("/restaurants/**", "/menu-items/**")
-                    .hasAnyRole("HEMANTH", "ANNIE", "ADMIN")
-
-                .requestMatchers("/orders/**", "/order-items/**")
-                    .hasAnyRole("KISOL", "THENMOZLI", "ADMIN")
-
-                .requestMatchers("/drivers/**")
-                    .hasAnyRole("KISOL", "JEEVITHA", "ADMIN")
-
-                .requestMatchers("/coupons/**")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
-
-                .requestMatchers("/ratings/**")
                     .hasAnyRole("ANNIE", "ADMIN")
-
-                // ✅ Swagger allowed
-                .requestMatchers(
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html"
-                ).permitAll()
-
+                // Hemanth – Restaurant & Menu APIs
+                .requestMatchers("/restaurants/**", "/menu-items/**")
+                    .hasAnyRole("HEMANTH", "ADMIN")
+                // Thenmozhi (Orders) & Kisol (Delivery Assignments) share /orders/**
+                .requestMatchers("/orders/**", "/order-items/**")
+                    .hasAnyRole("THENMOZLI", "KISOL", "ADMIN")
+                // Kisol – Driver APIs
+                .requestMatchers("/drivers/**")
+                    .hasAnyRole("KISOL", "ADMIN")
+                // Jeevitha – Coupons & Ratings APIs
+                .requestMatchers("/coupons/**", "/ratings/**")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+                // Swagger public
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                    .permitAll()
                 .anyRequest().authenticated()
             )
-
-            // 🔥 BASIC AUTH (Swagger friendly)
             .httpBasic(Customizer.withDefaults())
-
-            // ⚡ Force login popup when unauthorized
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, exx) -> {
                     res.setStatus(401);
