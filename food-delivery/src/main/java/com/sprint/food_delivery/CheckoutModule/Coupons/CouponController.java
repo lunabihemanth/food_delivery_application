@@ -67,16 +67,12 @@ public class CouponController {
     }
 
     // Update the Coupon
-    @PutMapping("/{couponId}")
-    public ResponseEntity<Map<String, Object>> updateCoupon(
-            @PathVariable Integer couponId,
-            @Valid @RequestBody CouponRequestDTO dto) {
-
-        return ResponseEntity.ok(
-                buildResponse(200, "Coupon updated successfully",
-                        couponService.update(couponId, dto))
-        );
-    }
+    @PutMapping("/{couponId}")   // inside a @RequestMapping("/coupons") class
+        public ResponseEntity<?> updateCoupon(@PathVariable Integer couponId,
+                                        @RequestBody CouponRequestDTO dto) {
+        CouponResponseDTO updated = couponService.update(couponId, dto);
+        return ResponseEntity.ok(buildResponse(200, "Coupon updated", updated));
+        }
 
     // Delete Coupon
     @DeleteMapping("/{couponId}")
@@ -89,4 +85,7 @@ public class CouponController {
                 buildResponse(200, "Coupon deleted successfully", null)
         );
     }
+
+
+    
 }

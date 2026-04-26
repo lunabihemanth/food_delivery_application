@@ -19,7 +19,7 @@ public class CustomerService implements ICustomerService {
     // CREATE
     @Override
     public CustomerResponseDTO save(CustomerRequestDTO dto) {
-
+        
         // Validation
         if (dto.getCustomerName() == null || dto.getCustomerName().isBlank()) {
             throw new BadRequestException("Customer name cannot be empty");

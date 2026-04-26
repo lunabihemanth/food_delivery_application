@@ -197,8 +197,16 @@ public class OrdersService implements IOrdersService {
     }
 
     @Override
-    public OrdersResponseDTO updateOrderStatus(Integer orderId, String status) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'updateOrderStatus'");
+public OrdersResponseDTO updateOrderStatus(Integer orderId, String status) {
+    Orders order = repository.findById(orderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+    if (!isValidTransition(order.getOrderStatus(), status)) {
+        throw new BadRequestException("Invalid status transition from "
+                + order.getOrderStatus() + " to " + status);
     }
+
+    order.setOrderStatus(status);
+    return map(repository.save(order));
+}
 }

@@ -1,7 +1,10 @@
 package com.sprint.food_delivery.securityconfig;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,8 +17,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 public class SecurityConfigfile {
@@ -77,24 +78,54 @@ public class SecurityConfigfile {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                // ⭐ ============ SPECIFIC RULES FIRST ============
+
+                // Jeevitha – submit rating on an order
+                .requestMatchers(HttpMethod.POST, "/orders/*/ratings")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+
+                // Jeevitha – view ratings for a restaurant
+                .requestMatchers(HttpMethod.GET, "/restaurants/*/ratings")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+
+                // Jeevitha – fetch a single order (needed to get restaurantId for rating)
+                .requestMatchers(HttpMethod.GET, "/orders/*")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+
+                // Jeevitha – order‑coupon endpoints
+                .requestMatchers(HttpMethod.POST, "/orders/*/coupons/*")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/orders/*/coupons/*")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/orders/*/coupons")
+                    .hasAnyRole("JEEVITHA", "ADMIN")
+
+                // ⭐ ============ GENERAL RULES ============
+
                 // Annie – Customer & Address APIs
                 .requestMatchers("/customers/**", "/addresses/**")
                     .hasAnyRole("ANNIE", "ADMIN")
+
                 // Hemanth – Restaurant & Menu APIs
                 .requestMatchers("/restaurants/**", "/menu-items/**")
                     .hasAnyRole("HEMANTH", "ADMIN")
-                // Thenmozhi (Orders) & Kisol (Delivery Assignments) share /orders/**
+
+                // Thenmozhi (Orders) & Kisol (Delivery Assignments)
                 .requestMatchers("/orders/**", "/order-items/**")
                     .hasAnyRole("THENMOZLI", "KISOL", "ADMIN")
+
                 // Kisol – Driver APIs
                 .requestMatchers("/drivers/**")
                     .hasAnyRole("KISOL", "ADMIN")
-                // Jeevitha – Coupons & Ratings APIs
+
+                // Jeevitha – general Coupons & Ratings
                 .requestMatchers("/coupons/**", "/ratings/**")
                     .hasAnyRole("JEEVITHA", "ADMIN")
+
                 // Swagger public
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                     .permitAll()
+
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())
