@@ -75,20 +75,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND
         );
 }
-@ExceptionHandler(MethodArgumentNotValidException.class)
-public ResponseEntity<Map<String, Object>> handleValidation(
-        MethodArgumentNotValidException ex) {
 
-    String message = ex.getBindingResult()
-            .getFieldErrors()
-            .get(0)
-            .getDefaultMessage();
-
-    return new ResponseEntity<>(
-            buildResponse(HttpStatus.BAD_REQUEST, message),
-            HttpStatus.BAD_REQUEST
-    );
-}
 
     // 🔴 Driver Not Found
     @ExceptionHandler(DriverNotFoundException.class)
@@ -100,14 +87,19 @@ public ResponseEntity<Map<String, Object>> handleValidation(
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
 public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-    // Get only the first validation error message
-    String firstErrorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-    
+
+    Map<String, String> errors = new HashMap<>();
+
+    ex.getBindingResult().getFieldErrors().forEach(error ->
+            errors.put(error.getField(), error.getDefaultMessage())
+    );
+
     Map<String, Object> response = new HashMap<>();
     response.put("status", HttpStatus.BAD_REQUEST.value());
-    response.put("message", firstErrorMessage);
+    response.put("error", "Validation Failed");
+    response.put("messages", errors);
     response.put("timestamp", LocalDateTime.now());
-    
+
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 }
 
