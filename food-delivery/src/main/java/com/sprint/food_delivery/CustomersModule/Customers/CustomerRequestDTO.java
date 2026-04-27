@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+// This class is used to receive customer input from API request
 public class CustomerRequestDTO {
     
     @NotBlank(message = "Customer name cannot be empty")
@@ -19,7 +20,7 @@ public class CustomerRequestDTO {
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
     private String customerPhone;
 
-    //Setters
+    
 
     public String getCustomerName() {
         return customerName;
