@@ -69,8 +69,8 @@ public class RestaurantsController {
 
     //get restaurant by order
     @GetMapping("/{restaurantId}/orders")
-public ResponseEntity<?> getOrdersByRestaurant(@PathVariable Integer restaurantId) {
-    return ResponseEntity.ok(
+    public ResponseEntity<?> getOrdersByRestaurant(@PathVariable Integer restaurantId) {
+        return ResponseEntity.ok(
         build(200, "Restaurant orders fetched", orderService.getByRestaurantId(restaurantId))
     );
 }

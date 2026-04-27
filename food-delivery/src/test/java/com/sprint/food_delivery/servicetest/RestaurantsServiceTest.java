@@ -25,7 +25,7 @@ public class RestaurantsServiceTest {
     @Autowired
     private IRestaurantsService Restaurantservice;
 
-    // 🔧 Helper
+    // Helper
     private RestaurantsRequestDTO createDTO(String name) {
         RestaurantsRequestDTO dto = new RestaurantsRequestDTO();
         dto.setRestaurantName(name);

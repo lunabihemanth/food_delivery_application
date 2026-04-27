@@ -37,7 +37,7 @@ public class OrdersCouponsServiceTest {
     @Autowired private ICustomerService customerService;
     @Autowired private IRestaurantsService Restaurantservice;
 
-    // 🔧 HELPERS
+    // HELPERS
 
     private Integer createCustomer() {
         CustomerRequestDTO dto = new CustomerRequestDTO();

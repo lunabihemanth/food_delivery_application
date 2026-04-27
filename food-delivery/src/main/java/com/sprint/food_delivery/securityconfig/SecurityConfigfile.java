@@ -26,7 +26,7 @@ public class SecurityConfigfile {
         return new BCryptPasswordEncoder();
     }
 
-    // 👥 Users with specific roles
+    // Users with specific roles
     @Bean
     public InMemoryUserDetailsManager userDetailsService(PasswordEncoder encoder) {
         UserDetails hemanth = User.withUsername("hemanth")
@@ -79,16 +79,16 @@ public class SecurityConfigfile {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // ===== PUBLIC ====================
+                // PUBLIC
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                // ===== KISOL (Driver & Delivery Assignment) =====
+                // KISOL (Driver & Delivery Assignment)
                 .requestMatchers("/drivers/**").hasAnyRole("KISOL", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/orders/*/assign-driver/*").hasAnyRole("KISOL", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/drivers/*/orders").hasAnyRole("KISOL", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/orders/*/delivery-status").hasAnyRole("KISOL", "ADMIN")
 
-                // ===== JEEVITHA (Coupons, Ratings, Order-Coupon) =====
+                // JEEVITHA (Coupons, Ratings, Order-Coupon)
                 .requestMatchers("/coupons/**").hasAnyRole("JEEVITHA", "ADMIN")
                 .requestMatchers("/ratings/**").hasAnyRole("JEEVITHA", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/orders/*/ratings").hasAnyRole("JEEVITHA", "ADMIN")
@@ -97,16 +97,16 @@ public class SecurityConfigfile {
                 .requestMatchers("/orders/*/coupons/*").hasAnyRole("JEEVITHA", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/orders/*/coupons").hasAnyRole("JEEVITHA", "ADMIN")
 
-                // ===== THENMOZLI (Orders & Order Items) =====
+                // THENMOZLI (Orders & Order Items)
                 .requestMatchers("/orders/**", "/order-items/**").hasAnyRole("THENMOZLI", "ADMIN")
 
-                // ===== HEMANTH (Restaurant & Menu) =====
+                // HEMANTH (Restaurant & Menu)
                 .requestMatchers("/restaurants/**", "/menu-items/**").hasAnyRole("HEMANTH", "ADMIN")
 
-                // ===== ANNIE (Customer & Address) =====
+                // ANNIE (Customer & Address)
                 .requestMatchers("/customers/**", "/addresses/**").hasAnyRole("ANNIE", "ADMIN")
 
-                // ===== EVERYTHING ELSE =====
+                
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())

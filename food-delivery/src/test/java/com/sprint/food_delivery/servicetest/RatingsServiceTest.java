@@ -35,7 +35,7 @@ public class RatingsServiceTest {
     @Autowired private ICustomerService customerService;
     @Autowired private IRestaurantsService Restaurantservice;
 
-    // 🔧 HELPERS
+    // HELPERS
 
     private Integer createCustomer() {
         CustomerRequestDTO dto = new CustomerRequestDTO();
@@ -53,7 +53,7 @@ public class RatingsServiceTest {
         return Restaurantservice.save(dto).getRestaurantId();
     }
 
-    // 🔥 IMPORTANT → create DELIVERED order
+    // IMPORTANT → create DELIVERED order
     private Integer createDeliveredOrder(Integer cid, Integer rid) {
         OrdersRequestDTO dto = new OrdersRequestDTO();
         dto.setCustomerId(cid);

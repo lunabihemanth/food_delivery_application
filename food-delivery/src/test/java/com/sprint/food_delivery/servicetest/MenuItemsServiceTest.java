@@ -31,7 +31,7 @@ public class MenuItemsServiceTest {
     @Autowired
     private IRestaurantsService Restaurantservice;
 
-    // 🔧 Helper → Always creates UNIQUE restaurant
+    // Helper
     private Integer createRestaurant() {
         RestaurantsRequestDTO dto = new RestaurantsRequestDTO();
         dto.setRestaurantName("Rest_" + System.nanoTime()); // 🔥 no duplicate ever
@@ -44,7 +44,7 @@ public class MenuItemsServiceTest {
         return res.getRestaurantId();
     }
 
-    // 🔧 Helper → Valid DTO
+    // Helper for MenuItems
     private MenuItemsRequestDTO createDTO(Integer restaurantId) {
         MenuItemsRequestDTO dto = new MenuItemsRequestDTO();
         dto.setItemName("Pizza");

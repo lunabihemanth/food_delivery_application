@@ -40,7 +40,7 @@ public class OrdersServiceTest {
     @Autowired
     private IDeliveryDriversService driverService;
 
-    // 🔧 Helpers
+    // Helpers
     private Integer createCustomer() {
         CustomerRequestDTO dto = new CustomerRequestDTO();
         dto.setCustomerName("User_" + System.nanoTime());
