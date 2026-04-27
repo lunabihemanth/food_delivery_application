@@ -21,8 +21,7 @@ export class LoginComponent {
     { username: 'hemanth',   password: 'hemanth123', route: '/hemanth' },
     { username: 'thenmozli', password: 'thenmozli123', route: '/thenmozhi' },
     { username: 'kisol',     password: 'kisol123', route: '/kisol' },
-    { username: 'jeevitha',  password: 'jeevitha123', route: '/jeevitha' },
-    { username: 'admin',     password: 'admin123', route: '/admin' }
+    { username: 'jeevitha',  password: 'jeevitha123', route: '/jeevitha' }
   ];
 
   constructor(private router: Router) {}

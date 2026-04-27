@@ -95,6 +95,9 @@ export class Hemanth {
   menuActionTitle = '';
   pendingMenuEndpoint: any = null;
 
+  // ─── Search state ─────────────────────────────────────
+  restaurantSearchTerm = '';
+
   // ─── Toast notification ───────────────────────────────
   toastMessage = '';
   toastType: 'success' | 'error' = 'success';
@@ -176,18 +179,33 @@ export class Hemanth {
     }
   }
 
+  // ─── Fetch restaurants (with optional search) ─────────
+  fetchRestaurants() {
+    const base = `${this.baseUrl}/restaurants`;
+    let url = base;
+    if (this.restaurantSearchTerm.trim()) {
+      url += '?restaurantName=' + encodeURIComponent(this.restaurantSearchTerm.trim());
+    }
+
+    this.http.get<any>(url, this.authHeader()).subscribe({
+      next: (res) => {
+        this.restaurants = this.extractData(res);
+        // The popup flag is already true when this method is called
+        this.showToastMessage('Restaurants loaded', 'success');
+      },
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+    });
+  }
+
+  // ─── Restaurant handlers ──────────────────────────────
   handleRestaurant(ep: any) {
     const url = `${this.baseUrl}/restaurants`;
 
     if (ep.method === 'GET' && ep.path === '/restaurants') {
-      this.http.get<any>(url, this.authHeader()).subscribe({
-        next: (res) => {
-          this.restaurants = this.extractData(res);
-          this.showRestaurantsPopup = true;
-          this.showToastMessage('Restaurants loaded', 'success');
-        },
-        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message ?? 'Error', 'error')
-      });
+      this.restaurantSearchTerm = '';
+      this.restaurants = [];
+      this.showRestaurantsPopup = true;      // opens the popup immediately
+      this.fetchRestaurants();               // loads all restaurants (no filter)
       return;
     }
 
@@ -303,6 +321,7 @@ export class Hemanth {
     this.resetRestaurantForm();
   }
 
+  // ─── Menu handlers (unchanged) ────────────────────────
   handleMenu(ep: any) {
     if (ep.method === 'GET' && ep.path === '/menu-items/{itemId}') {
       this.menuActionType = 'GET_BY_ID';

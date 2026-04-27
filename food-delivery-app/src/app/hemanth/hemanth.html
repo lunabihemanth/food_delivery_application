@@ -123,7 +123,7 @@
     </div>
   </div>
 
-  <!-- Restaurants List -->
+  <!-- Restaurants List (with Search) -->
   <div *ngIf="showRestaurantsPopup"
        class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 custom-scrollbar">
     <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[800px] max-h-[80vh] overflow-y-auto relative">
@@ -132,6 +132,26 @@
         <button (click)="showRestaurantsPopup=false"
                 class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
       </div>
+
+      <!-- 🔍 Search controls -->
+      <div class="flex items-end gap-3 mb-6 bg-gray-800/40 rounded-xl p-4 border border-gray-700">
+        <div class="flex-1">
+          <label class="text-gray-400 text-xs block mb-1">Search by restaurant name</label>
+          <input [(ngModel)]="restaurantSearchTerm" placeholder="Restaurant name"
+                 class="w-full p-2 rounded-lg bg-gray-900 border border-gray-700 focus:border-indigo-400 outline-none text-white" />
+        </div>
+        <button (click)="fetchRestaurants()"
+                class="bg-indigo-500 hover:bg-indigo-600 px-5 py-2 rounded-lg text-sm font-semibold transition active:scale-95">
+          Fetch
+        </button>
+      </div>
+
+      <!-- Feedback messages -->
+      <p *ngIf="restaurantSearchTerm && restaurants.length === 0" class="text-gray-400 text-center py-4">
+        No restaurants found for "{{ restaurantSearchTerm }}".
+      </p>
+
+      <!-- Restaurant Cards -->
       <div class="grid md:grid-cols-2 gap-4">
         <div *ngFor="let r of restaurants"
              class="bg-gray-800/80 border border-gray-700 rounded-xl p-4 hover:border-indigo-400/50 transition">
@@ -141,6 +161,7 @@
           <p class="text-gray-300">{{ r.restaurantPhone }}</p>
         </div>
       </div>
+
       <button (click)="showRestaurantsPopup=false"
               class="mt-6 w-full bg-red-500/80 hover:bg-red-600 py-3 rounded-xl font-semibold transition">
         Close
