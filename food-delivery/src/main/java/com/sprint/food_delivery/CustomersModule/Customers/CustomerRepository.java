@@ -20,13 +20,14 @@ public interface CustomerRepository extends JpaRepository<Customers, Integer> {
     
      // Finds customer by email and returns Optional (to handle null safely)
     Optional<Customers> findByCustomerEmail(String customerEmail);
+    List<Customers> findAllByOrderByCustomerIdDesc();
+
 
     // CUSTOM  QUERIES
 
     // Search customers by name (case-insensitive)
     @Query("SELECT c FROM Customers c WHERE LOWER(c.customerName) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Customers> searchByName(@Param("name") String name);
-
 
     // Custom update query to modify customer details
     @Modifying

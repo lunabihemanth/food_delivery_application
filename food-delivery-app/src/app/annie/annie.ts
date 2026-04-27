@@ -11,6 +11,7 @@ import { Location } from '@angular/common';
   templateUrl: './annie.html',
   styleUrls: ['./annie.css']
 })
+
 export class Annie {
 
   constructor(private http: HttpClient, private location: Location) {}
@@ -19,7 +20,7 @@ export class Annie {
   name = 'Annie Rufina C';
   role = 'Customer & Address API Tester';
 
-  // ─── Auth (matches backend user "annie") ──────────────
+  // Default Basic Authentication
   private defaultAuth = btoa('annie:annie123');
 
   authHeader() {
@@ -141,7 +142,7 @@ export class Annie {
     this.location.back();
   }
 
-  // ─── Fixed endpoint router ────────────────────────────
+//handle endpoin method
   handleEndpoint(ep: any) {
     // Address endpoints contain "/addresses" in their path
     if (ep.path.includes('/addresses') || ep.path.startsWith('/addresses/')) {
