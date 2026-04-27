@@ -14,12 +14,12 @@ import jakarta.persistence.Table;
 @Table(name = "orders_coupons")
 public class OrdersCoupons {
 
-    @EmbeddedId
+    @EmbeddedId //(composite primary key)
     private OrdersCouponsId id;
 
     @ManyToOne
     @MapsId("orderId")
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id")  //FK Column name
     private Orders order;
 
     @ManyToOne

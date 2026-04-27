@@ -15,11 +15,12 @@ public interface OrdersCouponsRepository extends JpaRepository<OrdersCoupons, Or
     List<OrdersCoupons> findByOrder_OrderId(Integer orderId);
 
 
-    // Fetch all mappings for a given coupon
+    // Fetch all orders for a given coupon
     @Query("SELECT oc FROM OrdersCoupons oc WHERE oc.coupon.couponId = :couponId")
     List<OrdersCoupons> findByCouponId(@Param("couponId") Integer couponId);
 
-
+//custom delete query
+//delete link btw specific coupon from a specific order
     @Modifying
     @Transactional
     @Query("DELETE FROM OrdersCoupons oc WHERE oc.order.orderId = :orderId AND oc.coupon.couponId = :couponId")

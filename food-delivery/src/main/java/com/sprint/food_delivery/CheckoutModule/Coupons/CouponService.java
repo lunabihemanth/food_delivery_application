@@ -43,6 +43,8 @@ public class CouponService implements ICouponService {
             throw new ConflictException("Coupon code already exists");
         }
 
+
+        //DTO to Entity
         Coupons coupon = new Coupons();
         coupon.setCouponCode(dto.getCouponCode());
         coupon.setDiscountAmount(dto.getDiscountAmount());
@@ -143,7 +145,7 @@ public class CouponService implements ICouponService {
         return "Coupon deleted successfully";
     }
 
-    // MAPPER
+    // Helper: Entity ->DTO (After DB)
     private CouponResponseDTO mapToDTO(Coupons coupon) {
         return new CouponResponseDTO(
                 coupon.getCouponId(),

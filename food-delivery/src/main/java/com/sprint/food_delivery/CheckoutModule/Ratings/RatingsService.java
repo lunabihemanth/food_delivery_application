@@ -28,14 +28,15 @@ public class RatingsService implements IRatingsService {
     @Autowired
     private RestaurantsRepository restaurantsRepository;
 
-    // Create
+    // Create rating
     @Override
     public RatingsResponseDTO save(RatingsRequestDTO dto) {
 
+        //check if order exists
         Orders order = ordersRepository.findById(dto.getOrderId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Order not found with id: " + dto.getOrderId()));
-
+//check if restaurant exists
         Restaurants restaurant = restaurantsRepository.findById(dto.getRestaurantId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Restaurant not found with id: " + dto.getRestaurantId()));
@@ -60,6 +61,8 @@ public class RatingsService implements IRatingsService {
             throw new BadRequestException("Rating must be between 1 and 5");
         }
 
+
+        //Convert DTO -> Entity
         Ratings rating = new Ratings();
         rating.setOrder(order);
         rating.setRestaurant(restaurant);
@@ -124,7 +127,7 @@ public class RatingsService implements IRatingsService {
         return ratingsRepository.getAverageRatingByRestaurant(restaurantId);
     }
 
-    // UPDATE
+    // UPDATE Rating
     @Override
     public RatingsResponseDTO update(Integer ratingId, RatingsRequestDTO dto) {
 
@@ -132,7 +135,7 @@ public class RatingsService implements IRatingsService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Rating not found with id: " + ratingId));
 
-        // Validate rating
+        // Validate rating range
         if (dto.getRating() < 1 || dto.getRating() > 5) {
             throw new BadRequestException("Rating must be between 1 and 5");
         }
@@ -174,7 +177,7 @@ public class RatingsService implements IRatingsService {
         return "Rating deleted successfully";
     }
 
-    // MAPPER
+    // Helper: Entity -> DTO converter
     private RatingsResponseDTO map(Ratings rating) {
         return new RatingsResponseDTO(
                 rating.getRatingId(),

@@ -18,7 +18,7 @@ public class RatingController {
     @Autowired
     private IRatingsService ratingsService;
 
-    
+    //ADD ratings
     @PostMapping("/orders/{orderId}/ratings")
     public RatingsResponseDTO addRating(
             @PathVariable Integer orderId,
@@ -28,7 +28,7 @@ public class RatingController {
         return ratingsService.save(dto);
     }
 
-
+//Get ratings by restaurant
     @GetMapping("/restaurants/{restaurantId}/ratings")
     public List<RatingsResponseDTO> getRatingsByRestaurant(
             @PathVariable Integer restaurantId) {
@@ -36,7 +36,7 @@ public class RatingController {
         return ratingsService.getByRestaurantId(restaurantId);
     }
 
-
+//Get single rating by id
     @GetMapping("/ratings/{ratingId}")
     public RatingsResponseDTO getRatingById(
             @PathVariable Integer ratingId) {
@@ -44,7 +44,7 @@ public class RatingController {
         return ratingsService.findById(ratingId);
     }
 
-
+//delete rating
     @DeleteMapping("/ratings/{ratingId}")
     public String deleteRating(
             @PathVariable Integer ratingId) {

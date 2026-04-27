@@ -5,6 +5,8 @@ public class OrdersCouponsResponseDTO {
     private Integer orderId;
     private Integer couponId;
 
+
+    //Called from Service Layer when converting Entity -> DTO
     public OrdersCouponsResponseDTO(Integer orderId, Integer couponId) {
         this.orderId = orderId;
         this.couponId = couponId;

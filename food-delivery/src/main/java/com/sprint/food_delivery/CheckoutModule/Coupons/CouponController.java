@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
-@RestController
-@RequestMapping("/coupons")
+@RestController   //makes this class a REST API controller
+@RequestMapping("/coupons")  //All API's in this class start with /coupons
 public class CouponController {
 
     @Autowired
