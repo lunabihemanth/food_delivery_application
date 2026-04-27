@@ -1,5 +1,7 @@
 package com.sprint.food_delivery.CustomersModule.Customers;
 
+
+// This class is used to send customer data as API response
 public class CustomerResponseDTO {
 
     private Integer customerId;

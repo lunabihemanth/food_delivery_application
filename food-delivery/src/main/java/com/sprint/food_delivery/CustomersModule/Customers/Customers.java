@@ -12,7 +12,11 @@ import jakarta.persistence.Table;
 public class Customers {
 
     @Id
+
+    // This is used to auto-generate the ID (auto increment)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    // Maps this field to customer_id column in DB
     @Column(name = "customer_id")
     private Integer customerId;
 
@@ -25,7 +29,7 @@ public class Customers {
     @Column(name = "customer_phone", nullable = false)
     private String customerPhone;
 
-    //getters and setters
+   
 
     public Integer getCustomerId() {
         return customerId;

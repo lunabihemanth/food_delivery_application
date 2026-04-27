@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sprint.food_delivery.Exception.BadRequestException;
 import com.sprint.food_delivery.Exception.ConflictException;
 import com.sprint.food_delivery.Exception.ResourceNotFoundException;
 
@@ -16,28 +15,15 @@ public class CustomerService implements ICustomerService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    // CREATE
     @Override
     public CustomerResponseDTO save(CustomerRequestDTO dto) {
-        
-        // Validation
-        if (dto.getCustomerName() == null || dto.getCustomerName().isBlank()) {
-            throw new BadRequestException("Customer name cannot be empty");
-        }
 
-        if (dto.getCustomerEmail() == null || dto.getCustomerEmail().isBlank()) {
-            throw new BadRequestException("Email cannot be empty");
-        }
-
-        if (dto.getCustomerPhone() == null || dto.getCustomerPhone().isBlank()) {
-            throw new BadRequestException("Phone cannot be empty");
-        }
 
         //Email must be unique
         if (customerRepository.existsByCustomerEmail(dto.getCustomerEmail())) {
             throw new ConflictException("Email already exists");
         }
-
+        //Convert dto to entity
         Customers customer = new Customers();
         customer.setCustomerName(dto.getCustomerName());
         customer.setCustomerEmail(dto.getCustomerEmail());
@@ -46,7 +32,7 @@ public class CustomerService implements ICustomerService {
         return mapToDTO(customerRepository.save(customer));
     }
 
-    // GET ALL
+    // GET ALL(entity to dto)
     @Override
     public List<CustomerResponseDTO> getAll() {
         return customerRepository.findAll().stream()

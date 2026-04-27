@@ -95,6 +95,9 @@ export class Hemanth {
   menuActionTitle = '';
   pendingMenuEndpoint: any = null;
 
+  // ─── Search state ─────────────────────────────────────
+  restaurantSearchTerm = '';
+
   // ─── Toast notification ───────────────────────────────
   toastMessage = '';
   toastType: 'success' | 'error' = 'success';
@@ -176,18 +179,33 @@ export class Hemanth {
     }
   }
 
+  // ─── Fetch restaurants (with optional search) ─────────
+  fetchRestaurants() {
+    const base = `${this.baseUrl}/restaurants`;
+    let url = base;
+    if (this.restaurantSearchTerm.trim()) {
+      url += '?restaurantName=' + encodeURIComponent(this.restaurantSearchTerm.trim());
+    }
+
+    this.http.get<any>(url, this.authHeader()).subscribe({
+      next: (res) => {
+        this.restaurants = this.extractData(res);
+        // The popup flag is already true when this method is called
+        this.showToastMessage('Restaurants loaded', 'success');
+      },
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+    });
+  }
+
+  // ─── Restaurant handlers ──────────────────────────────
   handleRestaurant(ep: any) {
     const url = `${this.baseUrl}/restaurants`;
 
     if (ep.method === 'GET' && ep.path === '/restaurants') {
-      this.http.get<any>(url, this.authHeader()).subscribe({
-        next: (res) => {
-          this.restaurants = this.extractData(res);
-          this.showRestaurantsPopup = true;
-          this.showToastMessage('Restaurants loaded', 'success');
-        },
-        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message ?? 'Error', 'error')
-      });
+      this.restaurantSearchTerm = '';
+      this.restaurants = [];
+      this.showRestaurantsPopup = true;      // opens the popup immediately
+      this.fetchRestaurants();               // loads all restaurants (no filter)
       return;
     }
 
@@ -228,15 +246,37 @@ export class Hemanth {
     const url = `${this.baseUrl}/restaurants`;
 
     if (this.restaurantActionType === 'POST') {
-      this.http.post(url, this.newRestaurant, this.authHeader()).subscribe({
-        next: () => {
-          this.showToastMessage('Restaurant Added ✅', 'success');
-          this.closeAllRestaurantPopups();
-        },
-        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
-      });
-      return;
+  // Quick front-end check to avoid backend validation errors
+  const name = this.newRestaurant.restaurantName.trim();
+  const addr = this.newRestaurant.restaurantAddress.trim();
+  const phone = this.newRestaurant.restaurantPhone.trim();
+  if (!name || name.length < 2 || !addr || !phone || !/^\d{10}$/.test(phone)) {
+    this.showToastMessage(
+      'Please fill all required fields correctly:\n• Name (2‑100 characters)\n• Address\n• Phone (10 digits)',
+      'error'
+    );
+    return;
+  }
+
+  this.http.post(url, this.newRestaurant, this.authHeader()).subscribe({
+    next: () => {
+      this.showToastMessage('Restaurant Added ✅', 'success');
+      this.closeAllRestaurantPopups();
+    },
+    error: (err) => {
+      // If the backend still returns a 400, show the same simple message
+      if (err.status === 400) {
+        this.showToastMessage(
+          'Please fill all required fields correctly.\nName (2‑100 chars), Address, Phone (10 digits).',
+          'error'
+        );
+      } else {
+        this.showToastMessage(err?.error?.message ?? err?.message, 'error');
+      }
     }
+  });
+  return;
+}
 
     if (this.restaurantActionType === 'GET_BY_ID') {
       if (!id) return this.showToastMessage('Restaurant ID required', 'error');
@@ -286,7 +326,7 @@ export class Hemanth {
           this.showToastMessage('Restaurant Deleted ✅', 'success');
           this.showRestaurantIdPopup = false;
         },
-        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        error: (err) => this.showToastMessage("Restaurant ID is missing or invalid", 'error')
       });
     }
   }
@@ -303,6 +343,7 @@ export class Hemanth {
     this.resetRestaurantForm();
   }
 
+  // ─── Menu handlers (unchanged) ────────────────────────
   handleMenu(ep: any) {
     if (ep.method === 'GET' && ep.path === '/menu-items/{itemId}') {
       this.menuActionType = 'GET_BY_ID';

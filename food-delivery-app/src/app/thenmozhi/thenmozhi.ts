@@ -25,7 +25,7 @@ export class Thenmozhi {
   authHeader() {
     const storedUser = localStorage.getItem('username');
     const storedHeader = localStorage.getItem('authHeader');
-    if (storedUser === 'thenmozli' && storedHeader) {
+    if (storedUser === 'admin' && storedHeader) {
       return {
         headers: new HttpHeaders({
           Authorization: 'Basic ' + storedHeader,

@@ -26,6 +26,7 @@ public class SecurityConfigfile {
         return new BCryptPasswordEncoder();
     }
 
+    // 👥 Users with specific roles
     @Bean
     public InMemoryUserDetailsManager userDetailsService(PasswordEncoder encoder) {
         UserDetails hemanth = User.withUsername("hemanth")
@@ -50,7 +51,7 @@ public class SecurityConfigfile {
                 .build();
         UserDetails admin = User.withUsername("admin")
                 .password(encoder.encode("admin123"))
-                .roles("ADMIN")
+                .roles("ADMIN")             // full access via rules below
                 .build();
 
         return new InMemoryUserDetailsManager(hemanth, kisol, thenmozli, annie, jeevitha, admin);
@@ -78,54 +79,34 @@ public class SecurityConfigfile {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // ⭐ ============ SPECIFIC RULES FIRST ============
+                // ===== PUBLIC ====================
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                // Jeevitha – submit rating on an order
-                .requestMatchers(HttpMethod.POST, "/orders/*/ratings")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
+                // ===== KISOL (Driver & Delivery Assignment) =====
+                .requestMatchers("/drivers/**").hasAnyRole("KISOL", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/orders/*/assign-driver/*").hasAnyRole("KISOL", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/drivers/*/orders").hasAnyRole("KISOL", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/orders/*/delivery-status").hasAnyRole("KISOL", "ADMIN")
 
-                // Jeevitha – view ratings for a restaurant
-                .requestMatchers(HttpMethod.GET, "/restaurants/*/ratings")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
+                // ===== JEEVITHA (Coupons, Ratings, Order-Coupon) =====
+                .requestMatchers("/coupons/**").hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers("/ratings/**").hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/orders/*/ratings").hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/restaurants/*/ratings").hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/orders/*").hasAnyRole("JEEVITHA", "ADMIN")    // fetch order for rating
+                .requestMatchers("/orders/*/coupons/*").hasAnyRole("JEEVITHA", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/orders/*/coupons").hasAnyRole("JEEVITHA", "ADMIN")
 
-                // Jeevitha – fetch a single order (needed to get restaurantId for rating)
-                .requestMatchers(HttpMethod.GET, "/orders/*")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
+                // ===== THENMOZLI (Orders & Order Items) =====
+                .requestMatchers("/orders/**", "/order-items/**").hasAnyRole("THENMOZLI", "ADMIN")
 
-                // Jeevitha – order‑coupon endpoints
-                .requestMatchers(HttpMethod.POST, "/orders/*/coupons/*")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/orders/*/coupons/*")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/orders/*/coupons")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
+                // ===== HEMANTH (Restaurant & Menu) =====
+                .requestMatchers("/restaurants/**", "/menu-items/**").hasAnyRole("HEMANTH", "ADMIN")
 
-                // ⭐ ============ GENERAL RULES ============
+                // ===== ANNIE (Customer & Address) =====
+                .requestMatchers("/customers/**", "/addresses/**").hasAnyRole("ANNIE", "ADMIN")
 
-                // Annie – Customer & Address APIs
-                .requestMatchers("/customers/**", "/addresses/**")
-                    .hasAnyRole("ANNIE", "ADMIN")
-
-                // Hemanth – Restaurant & Menu APIs
-                .requestMatchers("/restaurants/**", "/menu-items/**")
-                    .hasAnyRole("HEMANTH", "ADMIN")
-
-                // Thenmozhi (Orders) & Kisol (Delivery Assignments)
-                .requestMatchers("/orders/**", "/order-items/**")
-                    .hasAnyRole("THENMOZLI", "KISOL", "ADMIN")
-
-                // Kisol – Driver APIs
-                .requestMatchers("/drivers/**")
-                    .hasAnyRole("KISOL", "ADMIN")
-
-                // Jeevitha – general Coupons & Ratings
-                .requestMatchers("/coupons/**", "/ratings/**")
-                    .hasAnyRole("JEEVITHA", "ADMIN")
-
-                // Swagger public
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
-                    .permitAll()
-
+                // ===== EVERYTHING ELSE =====
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())

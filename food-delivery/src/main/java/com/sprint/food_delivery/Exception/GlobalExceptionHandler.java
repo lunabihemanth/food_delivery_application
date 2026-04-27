@@ -75,6 +75,20 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND
         );
 }
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<Map<String, Object>> handleValidation(
+        MethodArgumentNotValidException ex) {
+
+    String message = ex.getBindingResult()
+            .getFieldErrors()
+            .get(0)
+            .getDefaultMessage();
+
+    return new ResponseEntity<>(
+            buildResponse(HttpStatus.BAD_REQUEST, message),
+            HttpStatus.BAD_REQUEST
+    );
+}
 
     // 🔴 Driver Not Found
     @ExceptionHandler(DriverNotFoundException.class)

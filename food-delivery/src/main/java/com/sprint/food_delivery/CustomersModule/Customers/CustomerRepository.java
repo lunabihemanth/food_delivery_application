@@ -11,22 +11,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface CustomerRepository extends JpaRepository<Customers, Integer> {
 
-    // Derived Queries
+    //CUSTOM METHOD
 
-    // Check if email already exists (for validation)
+    // Checks if a customer email already exists in DB
+    // Used for validation before inserting new record
     boolean existsByCustomerEmail(String customerEmail);
-    
-    // Find customer by email
-    Optional<Customers> findByCustomerEmail(String customerEmail);
 
-    // CUSTOM SELECT QUERIES
+    
+     // Finds customer by email and returns Optional (to handle null safely)
+    Optional<Customers> findByCustomerEmail(String customerEmail);
+    List<Customers> findAllByOrderByCustomerIdDesc();
+
+
+    // CUSTOM  QUERIES
 
     // Search customers by name (case-insensitive)
     @Query("SELECT c FROM Customers c WHERE LOWER(c.customerName) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Customers> searchByName(@Param("name") String name);
 
-
-    // MODIFY (UPDATE) QUERIES
+    // Custom update query to modify customer details
     @Modifying
     @Transactional
     @Query("UPDATE Customers c SET c.customerName = :name, c.customerEmail = :email, c.customerPhone = :phone WHERE c.customerId = :id")
