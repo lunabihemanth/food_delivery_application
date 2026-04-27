@@ -246,15 +246,37 @@ export class Hemanth {
     const url = `${this.baseUrl}/restaurants`;
 
     if (this.restaurantActionType === 'POST') {
-      this.http.post(url, this.newRestaurant, this.authHeader()).subscribe({
-        next: () => {
-          this.showToastMessage('Restaurant Added ✅', 'success');
-          this.closeAllRestaurantPopups();
-        },
-        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
-      });
-      return;
+  // Quick front-end check to avoid backend validation errors
+  const name = this.newRestaurant.restaurantName.trim();
+  const addr = this.newRestaurant.restaurantAddress.trim();
+  const phone = this.newRestaurant.restaurantPhone.trim();
+  if (!name || name.length < 2 || !addr || !phone || !/^\d{10}$/.test(phone)) {
+    this.showToastMessage(
+      'Please fill all required fields correctly:\n• Name (2‑100 characters)\n• Address\n• Phone (10 digits)',
+      'error'
+    );
+    return;
+  }
+
+  this.http.post(url, this.newRestaurant, this.authHeader()).subscribe({
+    next: () => {
+      this.showToastMessage('Restaurant Added ✅', 'success');
+      this.closeAllRestaurantPopups();
+    },
+    error: (err) => {
+      // If the backend still returns a 400, show the same simple message
+      if (err.status === 400) {
+        this.showToastMessage(
+          'Please fill all required fields correctly.\nName (2‑100 chars), Address, Phone (10 digits).',
+          'error'
+        );
+      } else {
+        this.showToastMessage(err?.error?.message ?? err?.message, 'error');
+      }
     }
+  });
+  return;
+}
 
     if (this.restaurantActionType === 'GET_BY_ID') {
       if (!id) return this.showToastMessage('Restaurant ID required', 'error');
@@ -304,7 +326,7 @@ export class Hemanth {
           this.showToastMessage('Restaurant Deleted ✅', 'success');
           this.showRestaurantIdPopup = false;
         },
-        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        error: (err) => this.showToastMessage("Restaurant ID is missing or invalid", 'error')
       });
     }
   }

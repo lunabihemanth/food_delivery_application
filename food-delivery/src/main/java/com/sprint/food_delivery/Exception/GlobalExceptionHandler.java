@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -73,6 +74,20 @@ public class GlobalExceptionHandler {
                 buildResponse(HttpStatus.NOT_FOUND, ex.getMessage()),
                 HttpStatus.NOT_FOUND
         );
+}
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<Map<String, Object>> handleValidation(
+        MethodArgumentNotValidException ex) {
+
+    String message = ex.getBindingResult()
+            .getFieldErrors()
+            .get(0)
+            .getDefaultMessage();
+
+    return new ResponseEntity<>(
+            buildResponse(HttpStatus.BAD_REQUEST, message),
+            HttpStatus.BAD_REQUEST
+    );
 }
 
     // 🔴 Driver Not Found
