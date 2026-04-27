@@ -22,7 +22,7 @@ public class OrdersCouponsController {
     @Autowired
     private IOrdersCouponsService ordersCouponsService;
 
-    
+    //Response format for all API's
     private Map<String, Object> buildResponse(int status, String message, Object data) {
         Map<String, Object> response = new HashMap<>();
         response.put("status", status);

@@ -31,12 +31,12 @@ public class OrdersCouponsService implements IOrdersCouponsService {
     @Override
     public OrdersCouponsResponseDTO applyCoupon(OrdersCouponsRequestDTO dto) {
 
-        // Validate Order
+        // Validate Order exists
         Orders order = ordersRepository.findById(dto.getOrderId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Order not found with id: " + dto.getOrderId()));
 
-        // Validate Coupon
+        // Validate Coupon exists
         Coupons coupon = couponsRepository.findById(dto.getCouponId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Coupon not found with id: " + dto.getCouponId()));
@@ -57,6 +57,7 @@ public class OrdersCouponsService implements IOrdersCouponsService {
         entity.setId(id);
         entity.setOrder(order);
         entity.setCoupon(coupon);
+
 
         return map(ordersCouponsRepository.save(entity));
     }
@@ -91,7 +92,7 @@ public class OrdersCouponsService implements IOrdersCouponsService {
         return "Coupon removed successfully from order: " + orderId;
     }
 
-    // MAPPER
+    // Helper: Entity -> DTO
     private OrdersCouponsResponseDTO map(OrdersCoupons oc) {
         return new OrdersCouponsResponseDTO(
                 oc.getOrder().getOrderId(),

@@ -3,8 +3,8 @@ package com.sprint.food_delivery.CheckoutModule.Ratings;
 public class RatingsResponseDTO {
 
     private Integer ratingId;
-    private Integer orderId;
-    private Integer restaurantId;
+    private Integer orderId; //which order this rating belongs to
+    private Integer restaurantId; //which restaurant was rated
     private Integer rating;
     private String review;
 

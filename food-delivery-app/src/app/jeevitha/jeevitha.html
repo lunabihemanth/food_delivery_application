@@ -1,13 +1,13 @@
 <div class="min-h-screen bg-gray-950 text-white p-6">
 
-  <!-- ─── TOAST NOTIFICATION (higher z‑index than popups) ── -->
+  <!-- TOAST NOTIFICATION -->
   <div *ngIf="showToast"
        class="fixed bottom-6 right-6 z-[100] px-6 py-3 rounded-xl shadow-lg text-white font-medium backdrop-blur-md transition-all duration-300"
        [ngClass]="toastType === 'success' ? 'bg-indigo-600/90 border border-indigo-400' : 'bg-red-600/90 border border-red-400'">
     {{ toastMessage }}
   </div>
 
-  <!-- ─── HEADER ─────────────────────────────────────────── -->
+  <!--HEADER -->
   <div class="relative flex items-center justify-center mb-12 mt-4">
     <button (click)="goBack()"
             class="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium backdrop-blur-md border border-white/10 transition">
@@ -21,7 +21,7 @@
     </div>
   </div>
 
-  <!-- ========== API CONTRIBUTION CARD ========== -->
+  <!--  API CONTRIBUTION CARD -->
   <div class="max-w-4xl mx-auto mb-12">
     <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl">
 
@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <!-- ================= POPUPS ================= -->
+  <!--  POPUPS -->
 
   <!-- Coupon ID Popup -->
   <div *ngIf="showCouponIdPopup"

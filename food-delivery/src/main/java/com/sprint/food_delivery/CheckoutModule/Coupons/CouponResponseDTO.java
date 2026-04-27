@@ -9,6 +9,8 @@ public class CouponResponseDTO {
     private Double discountAmount;
     private LocalDate expiryDate;
 
+
+    //Entity->DTO
     public CouponResponseDTO(Integer couponId,
                              String couponCode,
                              Double discountAmount,
