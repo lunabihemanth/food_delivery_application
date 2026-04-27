@@ -12,15 +12,35 @@ import { Location } from '@angular/common';
   styleUrls: ['./hemanth.css']
 })
 export class Hemanth {
-
   constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
-
-  name = 'Hemanth';
+  name = 'Hemanth Karthik M';
   role = 'Restaurant & Menu API Tester';
 
-  // ================= ENDPOINTS (display purposes) =================
+  // ─── Auth (matches backend user "hemanth") ──────────────
+  private defaultAuth = btoa('hemanth:hemanth123');
+
+  authHeader() {
+    const storedUser = localStorage.getItem('username');
+    const storedHeader = localStorage.getItem('authHeader');
+    if (storedUser === 'hemanth' && storedHeader) {
+      return {
+        headers: new HttpHeaders({
+          Authorization: 'Basic ' + storedHeader,
+          'Content-Type': 'application/json'
+        })
+      };
+    }
+    return {
+      headers: new HttpHeaders({
+        Authorization: 'Basic ' + this.defaultAuth,
+        'Content-Type': 'application/json'
+      })
+    };
+  }
+
+  // ─── Endpoints ────────────────────────────────────────
   restaurantEndpoints = [
     { method: 'GET', path: '/restaurants', desc: 'List restaurants' },
     { method: 'POST', path: '/restaurants', desc: 'Add restaurant' },
@@ -37,7 +57,7 @@ export class Hemanth {
     { method: 'DELETE', path: '/menu-items/{itemId}', desc: 'Remove menu item' },
   ];
 
-  // ================= STATE =================
+  // ─── State ────────────────────────────────────────────
   restaurants: any[] = [];
   singleRestaurant: any = null;
   menuItems: any[] = [];
@@ -60,31 +80,34 @@ export class Hemanth {
     itemPrice: ''
   };
 
-  // ================= POPUP FLAGS =================
   showRestaurantsPopup = false;
   showRestaurantDetailPopup = false;
   showRestaurantFormPopup = false;
   showRestaurantIdPopup = false;
-
   showMenuGetPopup = false;
   showMenuFormPopup = false;
   showMenuIdPopup = false;
   showMenuItemDetailPopup = false;
+  showMenuRestaurantIdPopup = false;
 
   restaurantActionType = '';
   menuActionType = '';
   menuActionTitle = '';
+  pendingMenuEndpoint: any = null;
 
-  // ================= AUTH =================
-  authHeader() {
-    return {
-      headers: new HttpHeaders({
-        Authorization: 'Basic ' + btoa('hemanth:hemanth123'),
-        'Content-Type': 'application/json'
-      })
-    };
+  // ─── Toast notification ───────────────────────────────
+  toastMessage = '';
+  toastType: 'success' | 'error' = 'success';
+  showToast = false;
+
+  private showToastMessage(msg: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage = msg;
+    this.toastType = type;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
   }
 
+  // ─── Helpers ──────────────────────────────────────────
   safe(value: any): string {
     return value ? value.toString().trim() : '';
   }
@@ -95,10 +118,6 @@ export class Hemanth {
     if (res.data && Array.isArray(res.data)) return res.data;
     if (res.data) return [res.data];
     return [res];
-  }
-
-  showError(err: any) {
-    alert(err?.error?.message ?? err?.message ?? 'An error occurred');
   }
 
   getMethodClass(method: string) {
@@ -114,7 +133,49 @@ export class Hemanth {
     this.location.back();
   }
 
-  // ================= RESTAURANTS =================
+  handleEndpoint(ep: any) {
+    if (ep.path.startsWith('/restaurants')) {
+      this.handleRestaurant(ep);
+    } else if (ep.path === '/menu-items') {
+      this.pendingMenuEndpoint = ep;
+      this.menuRestaurantId = '';
+      this.showMenuRestaurantIdPopup = true;
+    } else if (ep.path.includes('/restaurants/')) {
+      this.pendingMenuEndpoint = ep;
+      this.menuRestaurantId = '';
+      this.showMenuRestaurantIdPopup = true;
+    } else {
+      this.handleMenu(ep);
+    }
+  }
+
+  confirmMenuRestaurantId() {
+    const rid = this.safe(this.menuRestaurantId);
+    if (!rid) {
+      this.showToastMessage('Restaurant ID is required', 'error');
+      return;
+    }
+    this.showMenuRestaurantIdPopup = false;
+    if (this.pendingMenuEndpoint) {
+      if (this.pendingMenuEndpoint.path === '/menu-items') {
+        this.resetMenuForm();
+        this.menuActionType = 'POST';
+        this.showMenuFormPopup = true;
+      } else if (this.pendingMenuEndpoint.path.includes('/restaurants/')) {
+        const url = `${this.baseUrl}/menu-items/restaurants/${rid}/menu-items`;
+        this.http.get<any>(url, this.authHeader()).subscribe({
+          next: (res) => {
+            this.menuItems = this.extractData(res);
+            this.showMenuGetPopup = true;
+            this.showToastMessage('Menu items loaded', 'success');
+          },
+          error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        });
+      }
+      this.pendingMenuEndpoint = null;
+    }
+  }
+
   handleRestaurant(ep: any) {
     const url = `${this.baseUrl}/restaurants`;
 
@@ -123,8 +184,9 @@ export class Hemanth {
         next: (res) => {
           this.restaurants = this.extractData(res);
           this.showRestaurantsPopup = true;
+          this.showToastMessage('Restaurants loaded', 'success');
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message ?? 'Error', 'error')
       });
       return;
     }
@@ -136,7 +198,6 @@ export class Hemanth {
       return;
     }
 
-    // NEW: GET by ID
     if (ep.method === 'GET' && ep.path === '/restaurants/{restaurantId}') {
       this.restaurantActionType = 'GET_BY_ID';
       this.restaurantActionTitle = 'View Restaurant Details – Enter ID';
@@ -169,37 +230,29 @@ export class Hemanth {
     if (this.restaurantActionType === 'POST') {
       this.http.post(url, this.newRestaurant, this.authHeader()).subscribe({
         next: () => {
-          alert("Restaurant Added ✅");
+          this.showToastMessage('Restaurant Added ✅', 'success');
           this.closeAllRestaurantPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // GET by ID
     if (this.restaurantActionType === 'GET_BY_ID') {
-      if (!id) {
-        alert("Restaurant ID required");
-        return;
-      }
+      if (!id) return this.showToastMessage('Restaurant ID required', 'error');
       this.http.get<any>(`${url}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
           this.singleRestaurant = this.extractData(res)[0];
           this.showRestaurantIdPopup = false;
           this.showRestaurantDetailPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // PUT step 1 (ask for ID then fetch current data)
     if (this.restaurantActionType === 'PUT' && this.showRestaurantIdPopup) {
-      if (!id) {
-        alert("Restaurant ID required");
-        return;
-      }
+      if (!id) return this.showToastMessage('Restaurant ID required', 'error');
       this.http.get<any>(`${url}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
           const data = this.extractData(res)[0];
@@ -211,31 +264,29 @@ export class Hemanth {
           this.showRestaurantIdPopup = false;
           this.showRestaurantFormPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // PUT step 2 (update)
     if (this.restaurantActionType === 'PUT' && this.showRestaurantFormPopup) {
       this.http.put(`${url}/${id}`, this.newRestaurant, this.authHeader()).subscribe({
         next: () => {
-          alert("Restaurant Updated ✅");
+          this.showToastMessage('Restaurant Updated ✅', 'success');
           this.closeAllRestaurantPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // DELETE
     if (this.restaurantActionType === 'DELETE') {
       this.http.delete(`${url}/${id}`, this.authHeader()).subscribe({
         next: () => {
-          alert("Restaurant Deleted ✅");
+          this.showToastMessage('Restaurant Deleted ✅', 'success');
           this.showRestaurantIdPopup = false;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -252,33 +303,7 @@ export class Hemanth {
     this.resetRestaurantForm();
   }
 
-  // ================= MENU =================
   handleMenu(ep: any) {
-    const rid = this.safe(this.menuRestaurantId);
-    if (!rid) {
-      alert('Please enter a Restaurant ID first');
-      return;
-    }
-
-    if (ep.method === 'POST' && ep.path === '/menu-items') {
-      this.resetMenuForm();
-      this.menuActionType = 'POST';
-      this.showMenuFormPopup = true;
-      return;
-    }
-
-    if (ep.method === 'GET' && ep.path.includes('/restaurants/')) {
-      const url = `${this.baseUrl}/menu-items/restaurants/${rid}/menu-items`;
-      this.http.get<any>(url, this.authHeader()).subscribe({
-        next: (res) => {
-          this.menuItems = this.extractData(res);
-          this.showMenuGetPopup = true;
-        },
-        error: (err) => this.showError(err)
-      });
-      return;
-    }
-
     if (ep.method === 'GET' && ep.path === '/menu-items/{itemId}') {
       this.menuActionType = 'GET_BY_ID';
       this.menuActionTitle = 'View Menu Item Details – Enter ID';
@@ -306,11 +331,10 @@ export class Hemanth {
 
   confirmMenuAction() {
     const id = this.safe(this.menuItemId);
-    const rid = this.safe(this.menuRestaurantId);
     const base = `${this.baseUrl}/menu-items`;
 
     if (!id) {
-      alert('Menu Item ID is required');
+      this.showToastMessage('Menu Item ID is required', 'error');
       return;
     }
 
@@ -321,7 +345,7 @@ export class Hemanth {
           this.showMenuIdPopup = false;
           this.showMenuItemDetailPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -329,10 +353,10 @@ export class Hemanth {
     if (this.menuActionType === 'DELETE') {
       this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
         next: () => {
-          alert("Menu Item Deleted ✅");
+          this.showToastMessage('Menu Item Deleted ✅', 'success');
           this.showMenuIdPopup = false;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -349,7 +373,7 @@ export class Hemanth {
           this.showMenuIdPopup = false;
           this.showMenuFormPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -368,10 +392,10 @@ export class Hemanth {
     if (this.menuActionType === 'POST') {
       this.http.post(base, payload, this.authHeader()).subscribe({
         next: () => {
-          alert("Menu Item Added ✅");
+          this.showToastMessage('Menu Item Added ✅', 'success');
           this.closeMenuPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -379,10 +403,10 @@ export class Hemanth {
     if (this.menuActionType === 'PUT') {
       this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
         next: () => {
-          alert("Menu Item Updated ✅");
+          this.showToastMessage('Menu Item Updated ✅', 'success');
           this.closeMenuPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }

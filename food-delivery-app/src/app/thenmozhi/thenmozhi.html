@@ -1,82 +1,138 @@
-<div class="min-h-screen bg-black text-white p-6">
+<div class="min-h-screen bg-gray-950 text-white p-6">
 
-  <!-- HEADER with Back Button -->
-<div class="relative text-center mb-10">
-  <button (click)="goBack()" 
-          class="absolute left-0 top-1/2 -translate-y-1/2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-white text-sm font-medium transition">
-    ← Back
-  </button>
-  <h1 class="text-3xl font-bold text-indigo-400">{{ name }}</h1>
-  <p class="text-gray-400">{{ role }}</p>
-</div>
+  <!-- ─── TOAST NOTIFICATION ────────────────────────────── -->
+  <div *ngIf="showToast"
+       class="fixed bottom-6 right-6 z-[100] px-6 py-3 rounded-xl shadow-lg text-white font-medium backdrop-blur-md transition-all duration-300"
+       [ngClass]="toastType === 'success' ? 'bg-indigo-600/90 border border-indigo-400' : 'bg-red-600/90 border border-red-400'">
+    {{ toastMessage }}
+  </div>
 
-  <!-- ================= ORDERS ================= -->
-  <h2 class="text-xl font-bold text-green-400 mb-4 max-w-4xl mx-auto">
-    Order APIs
-  </h2>
+  <!-- ─── HEADER ─────────────────────────────────────────── -->
+  <div class="relative flex items-center justify-center mb-12 mt-4">
+    <button (click)="goBack()"
+            class="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium backdrop-blur-md border border-white/10 transition">
+      ← Back
+    </button>
+    <div class="text-center">
+      <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-600">
+        {{ name }}
+      </h1>
+      <p class="text-gray-400 text-sm mt-2">{{ role }}</p>
+    </div>
+  </div>
 
-  <div class="max-w-4xl mx-auto space-y-6">
-    <div *ngFor="let ep of orderEndpoints"
-         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
-      <div class="flex items-center gap-3 mb-4">
-        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
-              [ngClass]="getMethodClass(ep.method)">
-          {{ ep.method }}
-        </span>
-        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
-          {{ ep.path }}
+  <!-- ========== API CONTRIBUTION CARD ========== -->
+  <div class="max-w-4xl mx-auto mb-12">
+    <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl">
+
+      <!-- Card Header -->
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-2xl font-bold">
+          T
+        </div>
+        <div>
+          <p class="text-xs text-indigo-400 uppercase tracking-widest font-semibold">API Contribution</p>
+          <h2 class="text-2xl font-bold text-white">Order & Order Item Module</h2>
+          <p class="text-gray-400 text-sm mt-1">Thenmozhi S – Handles order and order‑item endpoints</p>
         </div>
       </div>
-      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
-      <button (click)="handleOrder(ep)"
-              class="bg-indigo-500 hover:bg-indigo-600 px-6 py-2 rounded">
-        Run
+
+      <!-- Endpoint List -->
+      <div class="space-y-3">
+        <p class="text-sm font-semibold text-gray-300 mb-2">📦 Order Endpoints</p>
+        <div *ngFor="let ep of orderEndpoints"
+             class="flex items-center justify-between bg-gray-800/40 rounded-xl px-4 py-3 border border-gray-700/50 hover:border-indigo-400/30 transition">
+          <div class="flex items-center gap-3">
+            <span class="px-2 py-1 rounded-full text-xs font-bold text-white"
+                  [ngClass]="getMethodClass(ep.method)">{{ ep.method }}</span>
+            <code class="text-sm text-gray-300">{{ ep.path }}</code>
+            <span class="text-gray-500 text-xs hidden sm:inline">{{ ep.desc }}</span>
+          </div>
+          <button (click)="handleEndpoint(ep)"
+                  class="bg-indigo-500 hover:bg-indigo-600 px-4 py-1.5 rounded-full text-sm font-semibold transition active:scale-95">
+            Test
+          </button>
+        </div>
+
+        <p class="text-sm font-semibold text-gray-300 mt-6 mb-2">📋 Order Item Endpoints</p>
+        <div *ngFor="let ep of orderItemEndpoints"
+             class="flex items-center justify-between bg-gray-800/40 rounded-xl px-4 py-3 border border-gray-700/50 hover:border-indigo-400/30 transition">
+          <div class="flex items-center gap-3">
+            <span class="px-2 py-1 rounded-full text-xs font-bold text-white"
+                  [ngClass]="getMethodClass(ep.method)">{{ ep.method }}</span>
+            <code class="text-sm text-gray-300">{{ ep.path }}</code>
+            <span class="text-gray-500 text-xs hidden sm:inline">{{ ep.desc }}</span>
+          </div>
+          <button (click)="handleEndpoint(ep)"
+                  class="bg-indigo-500 hover:bg-indigo-600 px-4 py-1.5 rounded-full text-sm font-semibold transition active:scale-95">
+            Test
+          </button>
+        </div>
+      </div>
+
+      <p class="text-gray-500 text-xs mt-4 text-center">
+        Click "Test" to execute the endpoint. Responses are shown via toast notifications.
+      </p>
+    </div>
+  </div>
+
+  <!-- ================= POPUPS ================= -->
+
+  <!-- Order ID Popup (for viewing/updating orders) -->
+  <div *ngIf="showOrderIdPopup"
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">{{ orderActionTitle || 'Enter Order ID' }}</h2>
+        <button (click)="showOrderIdPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <input [(ngModel)]="orderActionId" placeholder="Order ID"
+             class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
+      <button (click)="confirmOrderIdAction()"
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
+        Next
+      </button>
+      <button (click)="showOrderIdPopup=false"
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
+        Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER ITEMS ================= -->
-  <h2 class="text-xl font-bold text-purple-400 mt-10 mb-4 max-w-4xl mx-auto">
-    Order Item APIs
-  </h2>
-
-  <!-- Context Order ID Input -->
-  <div class="max-w-4xl mx-auto mb-6 bg-gray-900 border border-gray-700 p-4 rounded-xl">
-    <h3 class="text-indigo-400 font-bold mb-2">
-      Order ID (required for item APIs)
-    </h3>
-    <input [(ngModel)]="contextOrderId"
-           placeholder="Enter Order ID"
-           class="w-full p-2 rounded bg-gray-800 border border-gray-700" />
-  </div>
-
-  <div class="max-w-4xl mx-auto space-y-6">
-    <div *ngFor="let ep of orderItemEndpoints"
-         class="bg-gray-900 border border-gray-700 rounded-xl p-6">
-      <div class="flex items-center gap-3 mb-4">
-        <span class="px-3 py-1 rounded text-white text-sm font-semibold"
-              [ngClass]="getMethodClass(ep.method)">
-          {{ ep.method }}
-        </span>
-        <div class="flex-1 bg-gray-800 px-3 py-2 rounded border border-gray-600 text-gray-300">
-          {{ ep.path }}
-        </div>
+  <!-- Order Form Popup (Place Order) -->
+  <div *ngIf="showOrderFormPopup"
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Place New Order</h2>
+        <button (click)="showOrderFormPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
       </div>
-      <p class="text-gray-400 text-sm mb-4">{{ ep.desc }}</p>
-      <button (click)="handleOrderItem(ep)"
-              class="bg-purple-500 hover:bg-purple-600 px-6 py-2 rounded">
-        Run
+      <input [(ngModel)]="newOrder.customerId" placeholder="Customer ID" type="number"
+             class="w-full mb-3 p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
+      <input [(ngModel)]="newOrder.restaurantId" placeholder="Restaurant ID" type="number"
+             class="w-full mb-4 p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
+      <button (click)="submitOrderForm()"
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
+        Place Order
+      </button>
+      <button (click)="showOrderFormPopup=false"
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
+        Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDERS LIST POPUP ================= -->
-  <!-- ================= ORDERS LIST POPUP ================= -->
-<div *ngIf="showOrdersListPopup"
-     class="fixed inset-0 bg-black/70 flex items-center justify-center">
-  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-full max-w-6xl mx-4">
-    <h2 class="text-indigo-400 font-bold mb-4">Orders</h2>
-    <div class="max-h-[60vh] overflow-y-auto pr-2">
+  <!-- Orders List Popup -->
+  <div *ngIf="showOrdersListPopup"
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-6xl mx-4 max-h-[80vh] overflow-y-auto custom-scrollbar relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold text-indigo-400">📦 Orders</h2>
+        <button (click)="showOrdersListPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
       <table class="w-full text-sm table-fixed border-collapse">
         <thead class="bg-gray-800 sticky top-0">
           <tr>
@@ -89,7 +145,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let o of orders; let i = index" class="border-b border-gray-700 hover:bg-gray-800">
+          <tr *ngFor="let o of orders" class="border-b border-gray-700 hover:bg-gray-800">
             <td class="p-2 text-gray-300">{{ o.orderId }}</td>
             <td class="p-2 text-gray-300">{{ o.orderDate | date:'short' }}</td>
             <td class="p-2 text-gray-300">{{ o.customerId }}</td>
@@ -111,62 +167,22 @@
         </tbody>
       </table>
       <p *ngIf="orders.length === 0" class="text-gray-400 text-center py-8">No orders found.</p>
-    </div>
-    <button (click)="showOrdersListPopup=false"
-            class="mt-6 w-full bg-red-500 py-2 rounded">
-      Close
-    </button>
-  </div>
-</div>
-
-  <!-- ================= ORDER ID POPUP ================= -->
-  <div *ngIf="showOrderIdPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-indigo-400 text-xl font-bold mb-4">{{ orderActionTitle }}</h2>
-      <input [(ngModel)]="orderActionId"
-             placeholder="Order ID"
-             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
-      <button (click)="confirmOrderIdAction()"
-              class="w-full bg-indigo-500 py-2 rounded mb-2">
-        Next
-      </button>
-      <button (click)="showOrderIdPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
-        Cancel
+      <button (click)="showOrdersListPopup=false"
+              class="mt-6 w-full bg-red-500/80 hover:bg-red-600 py-3 rounded-xl font-semibold transition">
+        Close
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER FORM POPUP (Place Order) ================= -->
-  <div *ngIf="showOrderFormPopup"
-     class="fixed inset-0 bg-black/70 flex items-center justify-center">
-  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-    <h2 class="text-indigo-400 text-xl font-bold mb-4">Place New Order</h2>
-    <input [(ngModel)]="newOrder.customerId"
-           placeholder="Customer ID"
-           type="number"
-           class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-    <input [(ngModel)]="newOrder.restaurantId"
-           placeholder="Restaurant ID"
-           type="number"
-           class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
-    <button (click)="submitOrderForm()"
-            class="w-full bg-green-500 py-2 rounded mb-2">
-      Place Order
-    </button>
-    <button (click)="showOrderFormPopup=false"
-            class="w-full bg-red-500 py-2 rounded">
-      Cancel
-    </button>
-  </div>
-</div>
-
-  <!-- ================= ORDER DETAIL POPUP ================= -->
+  <!-- Order Detail Popup -->
   <div *ngIf="showOrderDetailPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[450px]">
-      <h2 class="text-indigo-400 text-xl font-bold mb-4">Order Details</h2>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[450px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Order Details</h2>
+        <button (click)="showOrderDetailPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
       <div *ngIf="singleOrder" class="space-y-2">
         <p><span class="text-gray-400">Order ID:</span> {{ singleOrder.orderId }}</p>
         <p><span class="text-gray-400">Date:</span> {{ singleOrder.orderDate | date:'medium' }}</p>
@@ -176,152 +192,193 @@
         <p><span class="text-gray-400">Status:</span> {{ singleOrder.orderStatus }}</p>
       </div>
       <button (click)="showOrderDetailPopup=false"
-              class="mt-4 w-full bg-red-500 py-2 rounded">
+              class="mt-4 w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Close
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER STATUS UPDATE POPUP ================= -->
+  <!-- Order Status Update Popup -->
   <div *ngIf="showOrderStatusPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-indigo-400 text-xl font-bold mb-4">Update Order Status</h2>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Update Order Status</h2>
+        <button (click)="showOrderStatusPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
       <p class="text-gray-400 mb-2">Order ID: {{ orderActionId }}</p>
       <select [(ngModel)]="orderStatusUpdate.status"
-              class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded">
+              class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white">
         <option value="CONFIRMED">Confirmed</option>
         <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
         <option value="DELIVERED">Delivered</option>
         <option value="CANCELLED">Cancelled</option>
       </select>
       <button (click)="submitOrderStatusUpdate()"
-              class="w-full bg-yellow-500 py-2 rounded mb-2">
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
         Update
       </button>
       <button (click)="showOrderStatusPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= CUSTOMER ID INPUT POPUP ================= -->
+  <!-- Customer ID Input Popup (for fetching orders by customer) -->
   <div *ngIf="showCustomerIdInputPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-indigo-400 text-xl font-bold mb-4">Customer Orders</h2>
-      <input [(ngModel)]="contextCustomerId"
-             placeholder="Customer ID"
-             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Customer Orders</h2>
+        <button (click)="showCustomerIdInputPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <input [(ngModel)]="contextCustomerId" placeholder="Customer ID"
+             class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
       <button (click)="fetchCustomerOrders()"
-              class="w-full bg-indigo-500 py-2 rounded mb-2">
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
         Fetch Orders
       </button>
       <button (click)="showCustomerIdInputPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= RESTAURANT ID INPUT POPUP ================= -->
+  <!-- Restaurant ID Input Popup (for fetching orders by restaurant) -->
   <div *ngIf="showRestaurantIdInputPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-indigo-400 text-xl font-bold mb-4">Restaurant Orders</h2>
-      <input [(ngModel)]="contextRestaurantId"
-             placeholder="Restaurant ID"
-             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Restaurant Orders</h2>
+        <button (click)="showRestaurantIdInputPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <input [(ngModel)]="contextRestaurantId" placeholder="Restaurant ID"
+             class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
       <button (click)="fetchRestaurantOrders()"
-              class="w-full bg-indigo-500 py-2 rounded mb-2">
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
         Fetch Orders
       </button>
       <button (click)="showRestaurantIdInputPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER ITEMS LIST POPUP ================= -->
+  <!-- Order Context ID Popup (for order item endpoints needing an Order ID) -->
+  <div *ngIf="showOrderContextPopup"
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Enter Order ID</h2>
+        <button (click)="showOrderContextPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <input [(ngModel)]="orderContextId" placeholder="Order ID"
+             class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
+      <button (click)="confirmOrderContext()"
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
+        Next
+      </button>
+      <button (click)="showOrderContextPopup=false"
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Order Items List Popup -->
   <div *ngIf="showOrderItemsListPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[700px]">
-      <h2 class="text-purple-400 font-bold mb-4">Order Items</h2>
-      <div class="grid md:grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto pr-2">
-        <div *ngFor="let i of orderItems" class="bg-gray-800 p-4 rounded-lg">
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[700px] max-h-[80vh] overflow-y-auto custom-scrollbar relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">📋 Order Items</h2>
+        <button (click)="showOrderItemsListPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <div class="grid md:grid-cols-1 gap-4">
+        <div *ngFor="let i of orderItems" class="bg-gray-800/80 border border-gray-700 rounded-xl p-4 hover:border-indigo-400/50 transition">
           <p class="text-xs text-gray-400">Order Item ID: {{ i.orderItemId }}</p>
           <p class="text-gray-300">Item ID: {{ i.itemId }}</p>
           <p class="text-gray-300">Quantity: {{ i.quantity }}</p>
         </div>
       </div>
       <button (click)="showOrderItemsListPopup=false"
-              class="mt-6 w-full bg-red-500 py-2 rounded">
+              class="mt-6 w-full bg-red-500/80 hover:bg-red-600 py-3 rounded-xl font-semibold transition">
         Close
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER ITEM ID POPUP ================= -->
+  <!-- Order Item ID Popup -->
   <div *ngIf="showOrderItemIdPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-purple-400 text-xl font-bold mb-4">{{ orderItemActionTitle }}</h2>
-      <input [(ngModel)]="orderItemActionId"
-             placeholder="Order Item ID"
-             class="w-full p-2 mb-4 bg-gray-800 border border-gray-700 rounded"/>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">{{ orderItemActionTitle }}</h2>
+        <button (click)="showOrderItemIdPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <input [(ngModel)]="orderItemActionId" placeholder="Order Item ID"
+             class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
       <button (click)="confirmOrderItemIdAction()"
-              class="w-full bg-purple-500 py-2 rounded mb-2">
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
         Next
       </button>
       <button (click)="showOrderItemIdPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER ITEM FORM POPUP ================= -->
+  <!-- Order Item Form Popup -->
   <div *ngIf="showOrderItemFormPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-purple-400 text-xl font-bold mb-4">
-        {{ orderItemActionType === 'POST' ? 'Add Item to Order' : 'Update Quantity' }}
-      </h2>
-      <input *ngIf="orderItemActionType === 'POST'"
-             [(ngModel)]="newOrderItem.itemId"
-             placeholder="Item ID"
-             type="number"
-             class="w-full mb-3 p-2 bg-gray-800 border border-gray-700 rounded"/>
-      <input [(ngModel)]="newOrderItem.quantity"
-             placeholder="Quantity"
-             type="number"
-             min="1"
-             class="w-full mb-4 p-2 bg-gray-800 border border-gray-700 rounded"/>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">
+          {{ orderItemActionType === 'POST' ? 'Add Item to Order' : 'Update Quantity' }}
+        </h2>
+        <button (click)="showOrderItemFormPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
+      <input *ngIf="orderItemActionType === 'POST'" [(ngModel)]="newOrderItem.itemId" placeholder="Item ID" type="number"
+             class="w-full mb-3 p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
+      <input [(ngModel)]="newOrderItem.quantity" placeholder="Quantity" type="number" min="1"
+             class="w-full mb-4 p-3 rounded-xl bg-gray-800 border border-gray-700 focus:border-indigo-400 outline-none text-white no-spinner"/>
       <button (click)="submitOrderItemForm()"
-              class="w-full bg-green-500 py-2 rounded mb-2">
+              class="w-full bg-indigo-500 hover:bg-indigo-600 py-2.5 rounded-xl font-semibold transition mb-2">
         {{ orderItemActionType === 'POST' ? 'Add' : 'Update' }}
       </button>
       <button (click)="showOrderItemFormPopup=false"
-              class="w-full bg-red-500 py-2 rounded">
+              class="w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Cancel
       </button>
     </div>
   </div>
 
-  <!-- ================= ORDER ITEM DETAIL POPUP (optional, not heavily used) ================= -->
+  <!-- Order Item Detail Popup (optional) -->
   <div *ngIf="showOrderItemDetailPopup"
-       class="fixed inset-0 bg-black/70 flex items-center justify-center">
-    <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl w-[420px]">
-      <h2 class="text-purple-400 text-xl font-bold mb-4">Order Item Details</h2>
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-[420px] relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-indigo-400">Order Item Details</h2>
+        <button (click)="showOrderItemDetailPopup=false"
+                class="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl leading-none">&times;</button>
+      </div>
       <div *ngIf="singleOrderItem" class="space-y-2">
         <p><span class="text-gray-400">ID:</span> {{ singleOrderItem.orderItemId }}</p>
         <p><span class="text-gray-400">Item ID:</span> {{ singleOrderItem.itemId }}</p>
         <p><span class="text-gray-400">Quantity:</span> {{ singleOrderItem.quantity }}</p>
       </div>
       <button (click)="showOrderItemDetailPopup=false"
-              class="mt-4 w-full bg-red-500 py-2 rounded">
+              class="mt-4 w-full bg-red-500/80 hover:bg-red-600 py-2.5 rounded-xl font-semibold transition">
         Close
       </button>
     </div>

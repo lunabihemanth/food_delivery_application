@@ -16,10 +16,32 @@ export class Thenmozhi {
   constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
-  name = 'Thenmozhi';
+  name = 'Thenmozhi S';
   role = 'Order & Order Item API Tester';
 
-  // ================= ENDPOINTS DISPLAY =================
+  // ─── Auth (matches backend user "thenmozli") ─────────
+  private defaultAuth = btoa('admin:admin123');
+
+  authHeader() {
+    const storedUser = localStorage.getItem('username');
+    const storedHeader = localStorage.getItem('authHeader');
+    if (storedUser === 'thenmozli' && storedHeader) {
+      return {
+        headers: new HttpHeaders({
+          Authorization: 'Basic ' + storedHeader,
+          'Content-Type': 'application/json'
+        })
+      };
+    }
+    return {
+      headers: new HttpHeaders({
+        Authorization: 'Basic ' + this.defaultAuth,
+        'Content-Type': 'application/json'
+      })
+    };
+  }
+
+  // ─── Endpoints ────────────────────────────────────────
   orderEndpoints = [
     { method: 'POST', path: '/orders', desc: 'Place a new order' },
     { method: 'GET', path: '/orders', desc: 'List all orders (admin view)' },
@@ -36,7 +58,7 @@ export class Thenmozhi {
     { method: 'DELETE', path: '/order-items/{orderItemId}', desc: 'Remove item from order' },
   ];
 
-  // ================= STATE =================
+  // ─── State ────────────────────────────────────────────
   orders: any[] = [];
   orderItems: any[] = [];
   singleOrder: any = null;
@@ -48,13 +70,13 @@ export class Thenmozhi {
 
   contextCustomerId = '';
   contextRestaurantId = '';
-  contextOrderId = '';
+  // contextOrderId removed, now we use orderContextId from popup
+  orderContextId = '';   // used by order item context popup
 
   orderItemActionId = '';
   orderItemActionType = '';
   orderItemActionTitle = '';
 
-  // ✅ No driver field for customer
   newOrder = {
     customerId: '',
     restaurantId: ''
@@ -65,12 +87,11 @@ export class Thenmozhi {
     quantity: 1
   };
 
-  // ✅ Status dropdown – DELIVERED is set by driver, not here
   orderStatusUpdate = {
     status: 'CONFIRMED'
   };
 
-  // ================= POPUP FLAGS =================
+  // Popup flags
   showOrdersListPopup = false;
   showOrderFormPopup = false;
   showOrderIdPopup = false;
@@ -85,16 +106,22 @@ export class Thenmozhi {
   showOrderItemIdPopup = false;
   showOrderItemDetailPopup = false;
 
-  // ================= AUTH =================
-  authHeader() {
-    return {
-      headers: new HttpHeaders({
-        Authorization: 'Basic ' + btoa('admin:admin123'),
-        'Content-Type': 'application/json'
-      })
-    };
+  showOrderContextPopup = false;        // popup for Order ID when needed by order items
+  pendingOrderItemEndpoint: any = null; // store the endpoint that triggered order context
+
+  // ─── Toast notification ───────────────────────────────
+  toastMessage = '';
+  toastType: 'success' | 'error' = 'success';
+  showToast = false;
+
+  private showToastMessage(msg: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage = msg;
+    this.toastType = type;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
   }
 
+  // ─── Helpers ──────────────────────────────────────────
   safe(value: any): string {
     return value ? value.toString().trim() : '';
   }
@@ -105,10 +132,6 @@ export class Thenmozhi {
     if (res.data && Array.isArray(res.data)) return res.data;
     if (res.data) return [res.data];
     return [res];
-  }
-
-  showError(err: any) {
-    alert(err?.error?.message ?? err?.message ?? 'An error occurred');
   }
 
   getMethodClass(method: string) {
@@ -124,7 +147,42 @@ export class Thenmozhi {
     this.location.back();
   }
 
-  // ================= ORDER HANDLERS =================
+  // ─── Unified endpoint handler ─────────────────────────
+  handleEndpoint(ep: any) {
+    // Order item endpoints that involve an order ID first
+    if (ep.path.includes('/orders/{orderId}/items')) {
+      this.pendingOrderItemEndpoint = ep;
+      this.orderContextId = '';
+      this.showOrderContextPopup = true;
+      return;
+    }
+
+    // Other order item endpoints (PUT/DELETE /order-items/...)
+    if (ep.path.startsWith('/order-items')) {
+      this.handleOrderItem(ep);
+      return;
+    }
+
+    // All order endpoints and customer/restaurant order lookups
+    this.handleOrder(ep);
+  }
+
+  // Called after user enters Order ID for order item operations
+  confirmOrderContext() {
+    const oid = this.safe(this.orderContextId);
+    if (!oid) {
+      this.showToastMessage('Order ID is required', 'error');
+      return;
+    }
+    this.showOrderContextPopup = false;
+    if (this.pendingOrderItemEndpoint) {
+      // use the collected order ID for this operation
+      this.orderContextId = oid;  // store for later use
+      this.handleOrderItem(this.pendingOrderItemEndpoint);
+    }
+  }
+
+  // ─── Order handlers ──────────────────────────────────
   handleOrder(ep: any) {
     const base = `${this.baseUrl}/orders`;
 
@@ -140,8 +198,9 @@ export class Thenmozhi {
         next: (res) => {
           this.orders = this.extractData(res);
           this.showOrdersListPopup = true;
+          this.showToastMessage('Orders loaded', 'success');
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -181,7 +240,7 @@ export class Thenmozhi {
     const base = `${this.baseUrl}/orders`;
 
     if (!id) {
-      alert('Order ID is required');
+      this.showToastMessage('Order ID is required', 'error');
       return;
     }
 
@@ -192,7 +251,7 @@ export class Thenmozhi {
           this.showOrderIdPopup = false;
           this.showOrderDetailPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -209,17 +268,16 @@ export class Thenmozhi {
     const payload = { status: this.orderStatusUpdate.status };
     this.http.put(url, payload, this.authHeader()).subscribe({
       next: () => {
-        alert('Order status updated ✅');
+        this.showToastMessage('Order status updated ✅', 'success');
         this.showOrderStatusPopup = false;
         this.orderActionId = '';
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
   submitOrderForm() {
     const base = `${this.baseUrl}/orders`;
-    // ✅ Send date and status to pass validation; the service will ignore/override them
     const payload = {
       customerId: parseInt(this.newOrder.customerId, 10),
       restaurantId: parseInt(this.newOrder.restaurantId, 10),
@@ -229,17 +287,17 @@ export class Thenmozhi {
 
     this.http.post(base, payload, this.authHeader()).subscribe({
       next: () => {
-        alert('Order Placed ✅');
+        this.showToastMessage('Order Placed ✅', 'success');
         this.closeOrderPopups();
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
   fetchCustomerOrders() {
     const cid = this.safe(this.contextCustomerId);
     if (!cid) {
-      alert('Customer ID is required');
+      this.showToastMessage('Customer ID is required', 'error');
       return;
     }
     const url = `${this.baseUrl}/customers/${cid}/orders`;
@@ -248,15 +306,16 @@ export class Thenmozhi {
         this.orders = this.extractData(res);
         this.showCustomerIdInputPopup = false;
         this.showOrdersListPopup = true;
+        this.showToastMessage('Customer orders loaded', 'success');
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
   fetchRestaurantOrders() {
     const rid = this.safe(this.contextRestaurantId);
     if (!rid) {
-      alert('Restaurant ID is required');
+      this.showToastMessage('Restaurant ID is required', 'error');
       return;
     }
     const url = `${this.baseUrl}/restaurants/${rid}/orders`;
@@ -265,8 +324,9 @@ export class Thenmozhi {
         this.orders = this.extractData(res);
         this.showRestaurantIdInputPopup = false;
         this.showOrdersListPopup = true;
+        this.showToastMessage('Restaurant orders loaded', 'success');
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
@@ -283,36 +343,41 @@ export class Thenmozhi {
     this.resetOrderForm();
   }
 
-  // ================= ORDER ITEM HANDLERS =================
+  // ─── Order Item handlers ─────────────────────────────
   handleOrderItem(ep: any) {
-    const oid = this.safe(this.contextOrderId);
-    if (!oid) {
-      alert('Please enter an Order ID (context) first');
-      return;
+    const oid = this.safe(this.orderContextId);  // will be set if needed
+
+    // For endpoints that require an order ID (POST/GET /orders/{orderId}/items)
+    if (ep.path.includes('/orders/{orderId}/items')) {
+      if (!oid) {
+        // Should not happen because we collected it earlier
+        this.showToastMessage('Order ID is missing', 'error');
+        return;
+      }
+
+      if (ep.method === 'POST') {
+        this.resetOrderItemForm();
+        this.orderItemActionType = 'POST';
+        // orderContextId already contains the order ID
+        this.showOrderItemFormPopup = true;
+        return;
+      }
+
+      if (ep.method === 'GET') {
+        const url = `${this.baseUrl}/orders/${oid}/items`;
+        this.http.get<any>(url, this.authHeader()).subscribe({
+          next: (res) => {
+            this.orderItems = this.extractData(res);
+            this.showOrderItemsListPopup = true;
+            this.showToastMessage('Order items loaded', 'success');
+          },
+          error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        });
+        return;
+      }
     }
 
-    // POST /orders/{orderId}/items
-    if (ep.method === 'POST' && ep.path.includes('/orders/')) {
-      this.resetOrderItemForm();
-      this.orderItemActionType = 'POST';
-      this.showOrderItemFormPopup = true;
-      return;
-    }
-
-    // GET /orders/{orderId}/items
-    if (ep.method === 'GET' && ep.path.includes('/orders/')) {
-      const url = `${this.baseUrl}/orders/${oid}/items`;
-      this.http.get<any>(url, this.authHeader()).subscribe({
-        next: (res) => {
-          this.orderItems = this.extractData(res);
-          this.showOrderItemsListPopup = true;
-        },
-        error: (err) => this.showError(err)
-      });
-      return;
-    }
-
-    // PUT /order-items/{orderItemId}
+    // For endpoints that use Order Item ID (PUT/DELETE /order-items/...)
     if (ep.method === 'PUT') {
       this.orderItemActionType = 'PUT';
       this.orderItemActionTitle = 'Update Quantity – Enter Order Item ID';
@@ -321,7 +386,6 @@ export class Thenmozhi {
       return;
     }
 
-    // DELETE /order-items/{orderItemId}
     if (ep.method === 'DELETE') {
       this.orderItemActionType = 'DELETE';
       this.orderItemActionTitle = 'Remove Order Item – Enter ID';
@@ -336,23 +400,22 @@ export class Thenmozhi {
     const base = `${this.baseUrl}/order-items`;
 
     if (!id) {
-      alert('Order Item ID is required');
+      this.showToastMessage('Order Item ID is required', 'error');
       return;
     }
 
     if (this.orderItemActionType === 'DELETE') {
       this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
         next: () => {
-          alert('Order Item Removed ✅');
+          this.showToastMessage('Order Item Removed ✅', 'success');
           this.showOrderItemIdPopup = false;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
     if (this.orderItemActionType === 'PUT') {
-      // Fetch existing item to pre-fill quantity
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
           const data = this.extractData(res)[0];
@@ -363,13 +426,13 @@ export class Thenmozhi {
           this.showOrderItemIdPopup = false;
           this.showOrderItemFormPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
 
   submitOrderItemForm() {
-    const oid = this.safe(this.contextOrderId);
+    const oid = this.safe(this.orderContextId);   // valid for POST
     const id = this.safe(this.orderItemActionId);
     const base = `${this.baseUrl}/order-items`;
 
@@ -382,22 +445,22 @@ export class Thenmozhi {
       const url = `${this.baseUrl}/orders/${oid}/items`;
       this.http.post(url, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Item added to order ✅');
+          this.showToastMessage('Item added to order ✅', 'success');
           this.closeOrderItemPopups();
+          this.orderContextId = '';  // reset
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
     if (this.orderItemActionType === 'PUT') {
-      // Send ONLY quantity, not the whole payload
       this.http.put(`${base}/${id}`, { quantity: payload.quantity }, this.authHeader()).subscribe({
         next: () => {
-          alert('Quantity updated ✅');
+          this.showToastMessage('Quantity updated ✅', 'success');
           this.closeOrderItemPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }

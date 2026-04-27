@@ -16,10 +16,32 @@ export class Kisol {
   constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
-  name = 'Kisol';
+  name = 'Kisol Shamilisha';
   role = 'Driver & Assignment API Tester';
 
-  // ================= ENDPOINTS DISPLAY =================
+  // ─── Auth (matches backend user "kisol") ──────────────
+  private defaultAuth = btoa('kisol:kisol123');
+
+  authHeader() {
+    const storedUser = localStorage.getItem('username');
+    const storedHeader = localStorage.getItem('authHeader');
+    if (storedUser === 'kisol' && storedHeader) {
+      return {
+        headers: new HttpHeaders({
+          Authorization: 'Basic ' + storedHeader,
+          'Content-Type': 'application/json'
+        })
+      };
+    }
+    return {
+      headers: new HttpHeaders({
+        Authorization: 'Basic ' + this.defaultAuth,
+        'Content-Type': 'application/json'
+      })
+    };
+  }
+
+  // ─── Endpoints ────────────────────────────────────────
   driverEndpoints = [
     { method: 'POST', path: '/drivers', desc: 'Register delivery driver' },
     { method: 'GET', path: '/drivers', desc: 'List all drivers' },
@@ -34,7 +56,7 @@ export class Kisol {
     { method: 'PUT', path: '/orders/{orderId}/delivery-status', desc: 'Update delivery status' },
   ];
 
-  // ================= STATE =================
+  // ─── State ────────────────────────────────────────────
   drivers: any[] = [];
   driverOrders: any[] = [];
   singleDriver: any = null;
@@ -52,29 +74,33 @@ export class Kisol {
     driverVehicle: ''
   };
 
-  // ================= POPUP FLAGS =================
+  // Popup flags
   showDriversListPopup = false;
   showDriverFormPopup = false;
   showDriverIdPopup = false;
   showDriverDetailPopup = false;
 
   showAssignDriverPopup = false;
-  showDriverOrdersPopup = false;
+  showDriverOrdersPopup = false;        // collect driver ID
+  showDriverOrdersListPopup = false;    // show fetched orders
   showDeliveryStatusPopup = false;
 
   driverActionType = '';
   driverActionTitle = '';
 
-  // ================= AUTH =================
-  authHeader() {
-    return {
-      headers: new HttpHeaders({
-        Authorization: 'Basic ' + btoa('admin:admin123'),
-        'Content-Type': 'application/json'
-      })
-    };
+  // ─── Toast notification ───────────────────────────────
+  toastMessage = '';
+  toastType: 'success' | 'error' = 'success';
+  showToast = false;
+
+  private showToastMessage(msg: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage = msg;
+    this.toastType = type;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
   }
 
+  // ─── Helpers ──────────────────────────────────────────
   safe(value: any): string {
     return value ? value.toString().trim() : '';
   }
@@ -85,10 +111,6 @@ export class Kisol {
     if (res.data && Array.isArray(res.data)) return res.data;
     if (res.data) return [res.data];
     return [res];
-  }
-
-  showError(err: any) {
-    alert(err?.error?.message ?? err?.message ?? 'An error occurred');
   }
 
   getMethodClass(method: string) {
@@ -104,7 +126,17 @@ export class Kisol {
     this.location.back();
   }
 
-  // ================= DRIVER HANDLERS =================
+  // ─── Unified endpoint handler ─────────────────────────
+  handleEndpoint(ep: any) {
+  // All assignment endpoints contain "/orders" in the path
+  if (ep.path.includes('/orders')) {
+    this.handleAssignment(ep);
+  } else {
+    this.handleDriver(ep);
+  }
+}
+
+  // ─── Driver handlers ──────────────────────────────────
   handleDriver(ep: any) {
     const url = `${this.baseUrl}/drivers`;
 
@@ -113,8 +145,9 @@ export class Kisol {
         next: (res) => {
           this.drivers = this.extractData(res);
           this.showDriversListPopup = true;
+          this.showToastMessage('Drivers loaded', 'success');
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -156,7 +189,7 @@ export class Kisol {
     const url = `${this.baseUrl}/drivers`;
 
     if (!id) {
-      alert('Driver ID is required');
+      this.showToastMessage('Driver ID is required', 'error');
       return;
     }
 
@@ -167,7 +200,7 @@ export class Kisol {
           this.showDriverIdPopup = false;
           this.showDriverDetailPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -175,10 +208,10 @@ export class Kisol {
     if (this.driverActionType === 'DELETE') {
       this.http.delete(`${url}/${id}`, this.authHeader()).subscribe({
         next: () => {
-          alert('Driver Deleted ✅');
+          this.showToastMessage('Driver Deleted ✅', 'success');
           this.showDriverIdPopup = false;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -195,7 +228,7 @@ export class Kisol {
           this.showDriverIdPopup = false;
           this.showDriverFormPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -209,10 +242,10 @@ export class Kisol {
     if (this.driverActionType === 'POST') {
       this.http.post(url, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Driver Registered ✅');
+          this.showToastMessage('Driver Registered ✅', 'success');
           this.closeDriverPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -220,10 +253,10 @@ export class Kisol {
     if (this.driverActionType === 'PUT') {
       this.http.put(`${url}/${id}`, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Driver Updated ✅');
+          this.showToastMessage('Driver Updated ✅', 'success');
           this.closeDriverPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -240,7 +273,7 @@ export class Kisol {
     this.resetDriverForm();
   }
 
-  // ================= ASSIGNMENT HANDLERS =================
+  // ─── Assignment handlers ──────────────────────────────
   handleAssignment(ep: any) {
     if (ep.path === '/orders/{orderId}/assign-driver/{driverId}') {
       this.orderIdForAssignment = '';
@@ -251,7 +284,7 @@ export class Kisol {
 
     if (ep.path === '/drivers/{driverId}/orders') {
       this.driverIdForOrders = '';
-      this.showDriverOrdersPopup = true;
+      this.showDriverOrdersPopup = true;    // just the ID input
       return;
     }
 
@@ -267,48 +300,50 @@ export class Kisol {
     const orderId = this.safe(this.orderIdForAssignment);
     const driverId = this.safe(this.driverIdForAssignment);
     if (!orderId || !driverId) {
-      alert('Both Order ID and Driver ID are required');
+      this.showToastMessage('Both Order ID and Driver ID are required', 'error');
       return;
     }
     const url = `${this.baseUrl}/orders/${orderId}/assign-driver/${driverId}`;
     this.http.put(url, {}, this.authHeader()).subscribe({
       next: () => {
-        alert('Driver assigned to order ✅');
+        this.showToastMessage('Driver assigned to order ✅', 'success');
         this.showAssignDriverPopup = false;
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
   submitGetDriverOrders() {
     const driverId = this.safe(this.driverIdForOrders);
     if (!driverId) {
-      alert('Driver ID is required');
+      this.showToastMessage('Driver ID is required', 'error');
       return;
     }
     const url = `${this.baseUrl}/drivers/${driverId}/orders`;
     this.http.get<any>(url, this.authHeader()).subscribe({
       next: (res) => {
         this.driverOrders = this.extractData(res);
+        this.showDriverOrdersPopup = false;
+        this.showDriverOrdersListPopup = true;   // show the list
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
   submitDeliveryStatus() {
     const orderId = this.safe(this.orderIdForStatus);
     if (!orderId) {
-      alert('Order ID is required');
+      this.showToastMessage('Order ID is required', 'error');
       return;
     }
     const url = `${this.baseUrl}/orders/${orderId}/delivery-status`;
     const payload = { status: this.deliveryStatus };
     this.http.put(url, payload, this.authHeader()).subscribe({
       next: () => {
-        alert('Delivery status updated ✅');
+        this.showToastMessage('Delivery status updated ✅', 'success');
         this.showDeliveryStatusPopup = false;
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 }

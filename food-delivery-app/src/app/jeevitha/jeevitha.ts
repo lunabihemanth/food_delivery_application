@@ -16,10 +16,32 @@ export class Jeevitha {
   constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
-  name = 'Jeevitha';
+  name = 'Jeevitha E';
   role = 'Coupon & Rating API Tester';
 
-  // ================= ENDPOINTS DISPLAY =================
+  // ─── Auth (matches backend user "jeevitha") ──────────
+  private defaultAuth = btoa('admin:admin123');
+
+  authHeader() {
+    const storedUser = localStorage.getItem('username');
+    const storedHeader = localStorage.getItem('authHeader');
+    if (storedUser === 'jeevitha' && storedHeader) {
+      return {
+        headers: new HttpHeaders({
+          Authorization: 'Basic ' + storedHeader,
+          'Content-Type': 'application/json'
+        })
+      };
+    }
+    return {
+      headers: new HttpHeaders({
+        Authorization: 'Basic ' + this.defaultAuth,
+        'Content-Type': 'application/json'
+      })
+    };
+  }
+
+  // ─── Endpoints ────────────────────────────────────────
   couponEndpoints = [
     { method: 'POST', path: '/coupons', desc: 'Create coupon' },
     { method: 'GET', path: '/coupons', desc: 'List all coupons' },
@@ -37,36 +59,29 @@ export class Jeevitha {
   ratingEndpoints = [
     { method: 'POST', path: '/orders/{orderId}/ratings', desc: 'Submit rating for restaurant' },
     { method: 'GET', path: '/restaurants/{restaurantId}/ratings', desc: 'View all ratings for restaurant' },
-    //{ method: 'GET', path: '/ratings/{ratingId}', desc: 'Fetch a rating' },
     { method: 'DELETE', path: '/ratings/{ratingId}', desc: 'Remove rating (admin/moderation)' },
   ];
 
-  
-
-  // ================= STATE =================
+  // ─── State ────────────────────────────────────────────
   coupons: any[] = [];
   appliedCoupons: any[] = [];
   ratings: any[] = [];
   singleCoupon: any = null;
   singleRating: any = null;
 
-  // Coupon operations
   couponActionId = '';
   couponActionType = '';
   couponActionTitle = '';
   validateCouponCode = '';
 
-  // Order context for order-coupon APIs
-  contextOrderId = '';
+  contextOrderId = '';                 // will be set via popup when needed
   contextCouponIdForApply = '';
 
-  // Rating context
   contextRestaurantIdForRatings = '';
   ratingActionId = '';
   ratingActionType = '';
   ratingActionTitle = '';
 
-  // ✅ Updated to match backend DTO: couponCode, discountAmount, expiryDate
   newCoupon = {
     couponCode: '',
     discountAmount: 0,
@@ -78,7 +93,7 @@ export class Jeevitha {
     comment: ''
   };
 
-  // ================= POPUP FLAGS =================
+  // Popup flags
   showCouponsListPopup = false;
   showCouponFormPopup = false;
   showCouponIdPopup = false;
@@ -95,16 +110,24 @@ export class Jeevitha {
   showRatingDetailPopup = false;
   showRestaurantIdForRatingsPopup = false;
 
-  // ================= AUTH =================
-  authHeader() {
-    return {
-      headers: new HttpHeaders({
-        Authorization: 'Basic ' + btoa('admin:admin123'),
-        'Content-Type': 'application/json'
-      })
-    };
+  // New popup flags for dynamic order ID collection
+  showOrderContextPopup = false;
+  pendingOrderCouponEndpoint: any = null;   // for order‑coupon endpoints that require Order ID
+  pendingRatingEndpoint: any = null;        // for rating endpoints that require Order ID
+
+  // ─── Toast notification ───────────────────────────────
+  toastMessage = '';
+  toastType: 'success' | 'error' = 'success';
+  showToast = false;
+
+  private showToastMessage(msg: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage = msg;
+    this.toastType = type;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
   }
 
+  // ─── Helpers ──────────────────────────────────────────
   safe(value: any): string {
     return value ? value.toString().trim() : '';
   }
@@ -115,10 +138,6 @@ export class Jeevitha {
     if (res.data && Array.isArray(res.data)) return res.data;
     if (res.data) return [res.data];
     return [res];
-  }
-
-  showError(err: any) {
-    alert(err?.error?.message ?? err?.message ?? 'An error occurred');
   }
 
   getMethodClass(method: string) {
@@ -134,7 +153,53 @@ export class Jeevitha {
     this.location.back();
   }
 
-  // ================= COUPON HANDLERS =================
+  // ─── Unified endpoint handler ─────────────────────────
+  handleEndpoint(ep: any) {
+    // Coupon endpoints (no Order ID needed)
+    if (ep.path.startsWith('/coupons')) {
+      this.handleCoupon(ep);
+      return;
+    }
+
+    // Order‑coupon endpoints (require Order ID)
+    if (ep.path.includes('/orders') && ep.path.includes('coupons')) {
+      this.pendingOrderCouponEndpoint = ep;
+      this.pendingRatingEndpoint = null;
+      this.contextOrderId = '';
+      this.showOrderContextPopup = true;
+      return;
+    }
+
+    // Rating endpoints that require Order ID (POST and maybe others)
+    if (ep.path.includes('/orders/{orderId}/ratings')) {
+      this.pendingRatingEndpoint = ep;
+      this.pendingOrderCouponEndpoint = null;
+      this.contextOrderId = '';
+      this.showOrderContextPopup = true;
+      return;
+    }
+
+    // Rating endpoints that don't require Order ID (GET by restaurant, DELETE by ratingId)
+    this.handleRating(ep);
+  }
+
+  // Called when the user confirms the Order ID for order‑coupon or rating
+  confirmOrderContext() {
+    const oid = this.safe(this.contextOrderId);
+    if (!oid) {
+      this.showToastMessage('Order ID is required', 'error');
+      return;
+    }
+    this.showOrderContextPopup = false;
+
+    if (this.pendingOrderCouponEndpoint) {
+      this.handleOrderCoupon(this.pendingOrderCouponEndpoint);
+    } else if (this.pendingRatingEndpoint) {
+      this.handleRating(this.pendingRatingEndpoint);
+    }
+  }
+
+  // ─── Coupon handlers ──────────────────────────────────
   handleCoupon(ep: any) {
     const base = `${this.baseUrl}/coupons`;
 
@@ -150,8 +215,9 @@ export class Jeevitha {
         next: (res) => {
           this.coupons = this.extractData(res);
           this.showCouponsListPopup = true;
+          this.showToastMessage('Coupons loaded', 'success');
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -179,10 +245,76 @@ export class Jeevitha {
     }
   }
 
+  confirmCouponIdAction() {
+  const id = this.safe(this.couponActionId);
+  const base = `${this.baseUrl}/coupons`;
+
+  if (!id) {
+    this.showToastMessage('Coupon ID is required', 'error');
+    return;
+  }
+
+  if (this.couponActionType === 'DELETE') {
+    if (isNaN(Number(id))) {
+      this.showToastMessage('Please enter a numeric Coupon ID', 'error');
+      return;
+    }
+    this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
+      next: () => {
+        this.showToastMessage('Coupon disabled ✅', 'success');
+        this.showCouponIdPopup = false;
+      },
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+    });
+    return;
+  }
+
+  if (this.couponActionType === 'PUT') {
+    // Find the coupon from the already loaded list (no extra GET call)
+    const coupon = this.coupons.find(c => c.couponId == id);
+    if (!coupon) {
+      // If list is empty or coupon not in it, fetch all coupons first, then try again
+      if (this.coupons.length === 0) {
+        this.http.get<any>(base, this.authHeader()).subscribe({
+          next: (res) => {
+            this.coupons = this.extractData(res);
+            // Retry with now-populated list
+            const couponRetry = this.coupons.find(c => c.couponId == id);
+            if (couponRetry) {
+              this.newCoupon = {
+                couponCode: couponRetry.couponCode,
+                discountAmount: couponRetry.discountAmount,
+                expiryDate: couponRetry.expiryDate?.substring(0, 10) || ''
+              };
+              this.showCouponIdPopup = false;
+              this.showCouponFormPopup = true;
+            } else {
+              this.showToastMessage('Coupon not found', 'error');
+            }
+          },
+          error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        });
+      } else {
+        this.showToastMessage('Coupon not found', 'error');
+      }
+      return;
+    }
+
+    // Coupon found in list – pre‑fill the form
+    this.newCoupon = {
+      couponCode: coupon.couponCode,
+      discountAmount: coupon.discountAmount,
+      expiryDate: coupon.expiryDate?.substring(0, 10) || ''
+    };
+    this.showCouponIdPopup = false;
+    this.showCouponFormPopup = true;
+  }
+}
+
   submitValidateCoupon() {
     const code = this.safe(this.validateCouponCode);
     if (!code) {
-      alert('Coupon code is required');
+      this.showToastMessage('Coupon code is required', 'error');
       return;
     }
     const url = `${this.baseUrl}/coupons/${code}`;
@@ -192,49 +324,45 @@ export class Jeevitha {
         this.showValidateCouponPopup = false;
         this.showCouponDetailPopup = true;
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
   submitCouponForm() {
-    const id = this.safe(this.couponActionId);
-    const base = `${this.baseUrl}/coupons`;
+  const id = this.safe(this.couponActionId);
+  const base = `${this.baseUrl}/coupons`;
 
-    // ✅ Build payload matching backend DTO
-    const payload = {
-      couponCode: this.newCoupon.couponCode,
-      discountAmount: this.newCoupon.discountAmount,
-      expiryDate: this.newCoupon.expiryDate
-    };
+  // ✅ Append T00:00:00 to expiry date so it becomes a valid ISO date-time
+  const payload = {
+    couponCode: this.newCoupon.couponCode,
+    discountAmount: this.newCoupon.discountAmount,
+    expiryDate: this.newCoupon.expiryDate ? this.newCoupon.expiryDate + 'T00:00:00' : null
+  };
 
-    if (this.couponActionType === 'POST') {
-      this.http.post(base, payload, this.authHeader()).subscribe({
-        next: () => {
-          alert('Coupon Created ✅');
-          this.closeCouponPopups();
-        },
-        error: (err) => this.showError(err)
-      });
-      return;
-    }
-
-    if (this.couponActionType === 'PUT') {
-      this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
-        next: () => {
-          alert('Coupon Updated ✅');
-          this.closeCouponPopups();
-        },
-        error: (err) => this.showError(err)
-      });
-    }
+  if (this.couponActionType === 'POST') {
+    this.http.post(base, payload, this.authHeader()).subscribe({
+      next: () => {
+        this.showToastMessage('Coupon Created ✅', 'success');
+        this.closeCouponPopups();
+      },
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+    });
+    return;
   }
 
+  if (this.couponActionType === 'PUT') {
+    this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
+      next: () => {
+        this.showToastMessage('Coupon Updated ✅', 'success');
+        this.closeCouponPopups();
+      },
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+    });
+  }
+}
+
   resetCouponForm() {
-    this.newCoupon = {
-      couponCode: '',
-      discountAmount: 0,
-      expiryDate: ''
-    };
+    this.newCoupon = { couponCode: '', discountAmount: 0, expiryDate: '' };
   }
 
   closeCouponPopups() {
@@ -246,14 +374,9 @@ export class Jeevitha {
     this.resetCouponForm();
   }
 
-  // ================= ORDER-COUPON HANDLERS (unchanged) =================
+  // ─── Order-Coupon handlers ────────────────────────────
   handleOrderCoupon(ep: any) {
-    const oid = this.safe(this.contextOrderId);
-    if (!oid) {
-      alert('Please enter an Order ID (context) first');
-      return;
-    }
-
+    // Order ID should already be set in contextOrderId
     if (ep.method === 'POST') {
       this.contextCouponIdForApply = '';
       this.showApplyCouponPopup = true;
@@ -267,31 +390,60 @@ export class Jeevitha {
     }
 
     if (ep.method === 'GET') {
-      const url = `${this.baseUrl}/orders/${oid}/coupons`;
-      this.http.get<any>(url, this.authHeader()).subscribe({
-        next: (res) => {
-          this.appliedCoupons = this.extractData(res);
-          this.showAppliedCouponsPopup = true;
-        },
-        error: (err) => this.showError(err)
-      });
-    }
+  // Ensure we have the full coupon list to map with details
+  const loadApplied = () => {
+    const url = `${this.baseUrl}/orders/${this.contextOrderId}/coupons`;
+    this.http.get<any>(url, this.authHeader()).subscribe({
+      next: (res) => {
+        const rawArray = this.extractData(res);   // [{ orderId, couponId }, ...]
+        this.appliedCoupons = rawArray.map((item: any) => {
+          const fullCoupon = this.coupons.find(c => c.couponId == item.couponId);
+          return {
+            couponId: item.couponId,
+            couponCode: fullCoupon?.couponCode || 'Unknown',
+            discountAmount: fullCoupon?.discountAmount || 0,
+            expiryDate: fullCoupon?.expiryDate || ''
+          };
+        });
+        this.showAppliedCouponsPopup = true;
+        this.showToastMessage('Applied coupons loaded', 'success');
+      },
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+    });
+  };
+
+  // If coupons list is empty, fetch it first, then load applied
+  if (this.coupons.length === 0) {
+    this.http.get<any>(`${this.baseUrl}/coupons`, this.authHeader()).subscribe({
+      next: (res) => {
+        this.coupons = this.extractData(res);
+        loadApplied();
+      },
+      error: (err) => {
+        // If we can't load all coupons, still try to show something (with unknowns)
+        loadApplied();
+      }
+    });
+  } else {
+    loadApplied();
+  }
+}
   }
 
   submitApplyCoupon() {
     const oid = this.safe(this.contextOrderId);
     const cid = this.safe(this.contextCouponIdForApply);
     if (!oid || !cid) {
-      alert('Order ID and Coupon ID are required');
+      this.showToastMessage('Order ID and Coupon ID are required', 'error');
       return;
     }
     const url = `${this.baseUrl}/orders/${oid}/coupons/${cid}`;
     this.http.post(url, {}, this.authHeader()).subscribe({
       next: () => {
-        alert('Coupon applied to order ✅');
+        this.showToastMessage('Coupon applied to order ✅', 'success');
         this.showApplyCouponPopup = false;
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
@@ -299,25 +451,25 @@ export class Jeevitha {
     const oid = this.safe(this.contextOrderId);
     const cid = this.safe(this.contextCouponIdForApply);
     if (!oid || !cid) {
-      alert('Order ID and Coupon ID are required');
+      this.showToastMessage('Order ID and Coupon ID are required', 'error');
       return;
     }
     const url = `${this.baseUrl}/orders/${oid}/coupons/${cid}`;
     this.http.delete(url, this.authHeader()).subscribe({
       next: () => {
-        alert('Coupon removed from order ✅');
+        this.showToastMessage('Coupon removed from order ✅', 'success');
         this.showRemoveCouponPopup = false;
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
 
-  // ================= RATING HANDLERS (unchanged) =================
+  // ─── Rating handlers ──────────────────────────────────
   handleRating(ep: any) {
     if (ep.method === 'POST') {
-      const oid = this.safe(this.contextOrderId);
-      if (!oid) {
-        alert('Please enter an Order ID (context) first');
+      // contextOrderId already set from popup
+      if (!this.contextOrderId) {
+        this.showToastMessage('Order ID is required', 'error');
         return;
       }
       this.resetRatingForm();
@@ -332,14 +484,6 @@ export class Jeevitha {
       return;
     }
 
-    if (ep.method === 'GET' && ep.path === '/ratings/{ratingId}') {
-      this.ratingActionType = 'GET_BY_ID';
-      this.ratingActionTitle = 'Fetch Rating – Enter ID';
-      this.ratingActionId = '';
-      this.showRatingIdPopup = true;
-      return;
-    }
-
     if (ep.method === 'DELETE') {
       this.ratingActionType = 'DELETE';
       this.ratingActionTitle = 'Remove Rating – Enter ID';
@@ -349,117 +493,91 @@ export class Jeevitha {
     }
   }
 
-  confirmCouponIdAction() {
-  const id = this.safe(this.couponActionId);
-  const base = `${this.baseUrl}/coupons`;
-
-  if (!id) {
-    alert('Coupon ID is required');
-    return;
-  }
-
-  // 👇 NEW: prevent accidental code input
-  if (this.couponActionType === 'DELETE' && isNaN(Number(id))) {
-    alert('Please enter a numeric Coupon ID (not the coupon code).');
-    return;
-  }
-
-  if (this.couponActionType === 'DELETE') {
-    this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
-      next: () => {
-        alert('Coupon disabled ✅');
-        this.showCouponIdPopup = false;
-      },
-      error: (err) => this.showError(err)
-    });
-    return;
-  }
-
-  // PUT handling remains unchanged …
-}
-
   confirmRatingIdAction() {
     const id = this.safe(this.ratingActionId);
     const base = `${this.baseUrl}/ratings`;
 
     if (!id) {
-      alert('Rating ID is required');
-      return;
-    }
-
-    if (this.ratingActionType === 'GET_BY_ID') {
-      this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
-        next: (res) => {
-          this.singleRating = this.extractData(res)[0];
-          this.showRatingIdPopup = false;
-          this.showRatingDetailPopup = true;
-        },
-        error: (err) => this.showError(err)
-      });
+      this.showToastMessage('Rating ID is required', 'error');
       return;
     }
 
     if (this.ratingActionType === 'DELETE') {
-      this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
-        next: () => {
-          alert('Rating removed ✅');
-          this.showRatingIdPopup = false;
-        },
-        error: (err) => this.showError(err)
-      });
-    }
+  // Use responseType: 'text' because backend may return plain text / empty body
+  this.http.delete(`${base}/${id}`, { ...this.authHeader(), responseType: 'text' }).subscribe({
+    next: () => {
+      this.showToastMessage('Rating removed ✅', 'success');
+      this.showRatingIdPopup = false;
+    },
+    error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+  });
+}
   }
 
   submitRatingForm() {
-  const oid = this.safe(this.contextOrderId);
-  if (!oid) {
-    alert('Order ID is required');
-    return;
-  }
-
-  // 1. Fetch the order to get the restaurantId
-  const orderUrl = `${this.baseUrl}/orders/${oid}`;
-  this.http.get<any>(orderUrl, this.authHeader()).subscribe({
-    next: (orderRes) => {
-      const order = this.extractData(orderRes)[0];
-      const restaurantId = order.restaurantId;   // adjust field name if needed
-
-      // 2. Now send the rating with restaurantId
-      const ratingUrl = `${this.baseUrl}/orders/${oid}/ratings`;
-      const payload = {
-        orderId: parseInt(oid),
-        restaurantId: restaurantId,
-        rating: this.newRating.rating,
-        comment: this.newRating.comment
-      };
-
-      this.http.post(ratingUrl, payload, this.authHeader()).subscribe({
-        next: () => {
-          alert('Rating submitted ✅');
-          this.showRatingFormPopup = false;
-        },
-        error: (err) => this.showError(err)
-      });
-    },
-    error: (err) => this.showError(err)
-  });
-}
-  fetchRestaurantRatings() {
-    const rid = this.safe(this.contextRestaurantIdForRatings);
-    if (!rid) {
-      alert('Restaurant ID is required');
+    const oid = this.safe(this.contextOrderId);
+    if (!oid) {
+      this.showToastMessage('Order ID is required', 'error');
       return;
     }
-    const url = `${this.baseUrl}/restaurants/${rid}/ratings`;
-    this.http.get<any>(url, this.authHeader()).subscribe({
-      next: (res) => {
-        this.ratings = this.extractData(res);
-        this.showRestaurantIdForRatingsPopup = false;
-        this.showRatingsListPopup = true;
+
+    // Fetch order to get restaurantId
+    const orderUrl = `${this.baseUrl}/orders/${oid}`;
+    this.http.get<any>(orderUrl, this.authHeader()).subscribe({
+      next: (orderRes) => {
+        const order = this.extractData(orderRes)[0];
+        const restaurantId = order.restaurantId;
+
+        const ratingUrl = `${this.baseUrl}/orders/${oid}/ratings`;
+        const payload = {
+          orderId: parseInt(oid),
+          restaurantId: restaurantId,
+          rating: this.newRating.rating,
+          comment: this.newRating.comment
+        };
+
+        this.http.post(ratingUrl, payload, this.authHeader()).subscribe({
+          next: () => {
+            this.showToastMessage('Rating submitted ✅', 'success');
+            this.showRatingFormPopup = false;
+          },
+          error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        });
       },
-      error: (err) => this.showError(err)
+      error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
     });
   }
+
+  fetchRestaurantRatings() {
+  const rid = this.safe(this.contextRestaurantIdForRatings);
+  if (!rid) {
+    this.showToastMessage('Restaurant ID is required', 'error');
+    return;
+  }
+  const url = `${this.baseUrl}/restaurants/${rid}/ratings`;
+  this.http.get<any>(url, this.authHeader()).subscribe({
+    next: (res) => {
+      console.log('🔍 Raw restaurant ratings:', JSON.stringify(res, null, 2)); // temporary debug
+      const rawArray = this.extractData(res);
+
+      this.ratings = rawArray.map((item: any) => {
+        // Comment may be nested under 'rating', 'review', or flat
+        const comment = item.comment || item.review || item.text || (item.rating && item.rating.comment) || '';
+        return {
+          ratingId: item.ratingId || item.id,
+          orderId: item.orderId || item.order?.orderId,
+          rating: item.rating || item.score,
+          comment: comment
+        };
+      });
+
+      this.showRestaurantIdForRatingsPopup = false;
+      this.showRatingsListPopup = true;
+      this.showToastMessage('Ratings loaded', 'success');
+    },
+    error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+  });
+}
 
   resetRatingForm() {
     this.newRating = { rating: 5, comment: '' };

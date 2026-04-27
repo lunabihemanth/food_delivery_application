@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Component({
   selector: 'app-login',
@@ -10,69 +11,65 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./login.css']
 })
 export class LoginComponent {
+  username = '';
+  password = '';
+  errorMsg = '';
+  isLoading = false;
+  returnUrl = '/home';
 
-  // Input fields
-  username: string = '';
-  password: string = '';
-  errorMsg: string = '';
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private http: HttpClient
+  ) {
+    this.route.queryParams.subscribe(params => {
+      this.returnUrl = params['returnUrl'] || '/home';
+    });
+  }
 
-  constructor(private router: Router) {}
-
-  // 🔐 Dummy users (for demo)
-  users = [
-    { username: 'annie', password: '123', role: 'annie' },
-    { username: 'jeevitha', password: '123', role: 'jeevitha' },
-    { username: 'kisol', password: '123', role: 'kisol' },
-    { username: 'then', password: '123', role: 'thenmozhi' },
-    { username: 'hemanth', password: '123', role: 'hemanth' }
-  ];
-
-  // 🔄 Back button
   goBack() {
     this.router.navigate(['/home']);
   }
 
-  // 🚀 Login logic
   onLogin() {
-
-    // Check empty fields
     if (!this.username || !this.password) {
       this.errorMsg = 'Please enter username and password';
       return;
     }
 
-    // Find user
-    const user = this.users.find(
-      u => u.username === this.username && u.password === this.password
-    );
-
-    // Invalid login
-    if (!user) {
-      this.errorMsg = 'Invalid credentials';
-      return;
-    }
-
-    // Clear error
+    this.isLoading = true;
     this.errorMsg = '';
 
-    // (Optional) store role
-    localStorage.setItem('userRole', user.role);
+    const credentials = btoa(`${this.username}:${this.password}`);
+    const headers = new HttpHeaders({ Authorization: 'Basic ' + credentials });
 
-    // 🔀 Role-based navigation
-    if (user.role === 'annie') {
-      this.router.navigate(['/annie']);
-    } 
-    else if (user.role === 'jeevitha') {
-      this.router.navigate(['/jeevitha']);
-    } 
-    else if (user.role === 'kisol') {
-      this.router.navigate(['/kisol']);
-    } 
-    else if (user.role === 'thenmozhi') {
-      this.router.navigate(['/thenmozhi']);
-    }
-    else if (user.role === 'hemanth') {
-      this.router.navigate(['/hemanth']);
-    }
+    // Test against a protected endpoint that every authenticated user can reach
+    this.http.get('http://localhost:8081/orders', {
+      headers,
+      observe: 'response'
+    }).subscribe({
+      next: () => {
+        this.loginSuccess(credentials);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        if (err.status === 401) {
+          this.errorMsg = 'Invalid username or password';
+        } else if (err.status === 403) {
+          // Correct credentials, but user doesn't have access to /orders – still valid login
+          this.loginSuccess(credentials);
+        } else if (err.status === 0) {
+          this.errorMsg = 'Cannot connect to server. Is the backend running?';
+        } else {
+          this.errorMsg = 'Server error. Please try again.';
+        }
+      }
+    });
+  }
+
+  private loginSuccess(credentials: string) {
+    localStorage.setItem('authHeader', credentials);
+    localStorage.setItem('username', this.username);
+    this.router.navigate([this.returnUrl]);
   }
 }

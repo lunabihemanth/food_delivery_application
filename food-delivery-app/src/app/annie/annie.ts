@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-annie',
@@ -12,16 +13,38 @@ import { FormsModule } from '@angular/forms';
 })
 export class Annie {
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private location: Location) {}
 
   baseUrl = 'http://localhost:8081';
-  name = 'Annie';
+  name = 'Annie Rufina C';
   role = 'Customer & Address API Tester';
 
-  // ================= ENDPOINTS DISPLAY =================
+  // ─── Auth (matches backend user "annie") ──────────────
+  private defaultAuth = btoa('annie:annie123');
+
+  authHeader() {
+    const storedUser = localStorage.getItem('username');
+    const storedHeader = localStorage.getItem('authHeader');
+    if (storedUser === 'annie' && storedHeader) {
+      return {
+        headers: new HttpHeaders({
+          Authorization: 'Basic ' + storedHeader,
+          'Content-Type': 'application/json'
+        })
+      };
+    }
+    return {
+      headers: new HttpHeaders({
+        Authorization: 'Basic ' + this.defaultAuth,
+        'Content-Type': 'application/json'
+      })
+    };
+  }
+
+  // ─── Endpoints ────────────────────────────────────────
   customerEndpoints = [
     { method: 'POST', path: '/customers/add', desc: 'Create a new customer' },
-    { method: 'GET', path: '/customers/getall', desc: 'Fetch all customers (paging & filtering ready)' },
+    { method: 'GET', path: '/customers/getall', desc: 'Fetch all customers' },
     { method: 'GET', path: '/customers/{customerId}', desc: 'Fetch customer details by ID' },
     { method: 'PUT', path: '/customers/{customerId}', desc: 'Update customer profile' },
     { method: 'DELETE', path: '/customers/{customerId}', desc: 'Deactivate/delete customer' },
@@ -35,18 +58,17 @@ export class Annie {
     { method: 'DELETE', path: '/addresses/{addressId}', desc: 'Remove address' },
   ];
 
-  // ================= STATE =================
+  // ─── State ────────────────────────────────────────────
   customers: any[] = [];
   addresses: any[] = [];
   singleCustomer: any = null;
   singleAddress: any = null;
 
-  // For customer operations
   customerActionId = '';
   customerActionType = '';
   customerActionTitle = '';
 
-  // For address operations (context customer ID)
+  // For address context
   contextCustomerId = '';
   addressActionId = '';
   addressActionType = '';
@@ -67,7 +89,7 @@ export class Annie {
     country: ''
   };
 
-  // ================= POPUP FLAGS =================
+  // Popup flags
   showCustomersListPopup = false;
   showCustomerFormPopup = false;
   showCustomerIdPopup = false;
@@ -77,17 +99,23 @@ export class Annie {
   showAddressFormPopup = false;
   showAddressIdPopup = false;
   showAddressDetailPopup = false;
+  showAddressContextPopup = false;   // for collecting customer ID for address ops
 
-  // ================= AUTH =================
-  authHeader() {
-    return {
-      headers: new HttpHeaders({
-        Authorization: 'Basic ' + btoa('admin:admin123'),
-        'Content-Type': 'application/json'
-      })
-    };
+  pendingEndpoint: any = null;      // store the endpoint that triggered the address context popup
+
+  // ─── Toast notification ───────────────────────────────
+  toastMessage = '';
+  toastType: 'success' | 'error' = 'success';
+  showToast = false;
+
+  private showToastMessage(msg: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage = msg;
+    this.toastType = type;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
   }
 
+  // ─── Helpers ──────────────────────────────────────────
   safe(value: any): string {
     return value ? value.toString().trim() : '';
   }
@@ -100,10 +128,6 @@ export class Annie {
     return [res];
   }
 
-  showError(err: any) {
-    alert(err?.error?.message ?? err?.message ?? 'An error occurred');
-  }
-
   getMethodClass(method: string) {
     return {
       'bg-green-600': method === 'GET',
@@ -113,23 +137,59 @@ export class Annie {
     };
   }
 
-  // ================= CUSTOMER HANDLERS =================
+  goBack() {
+    this.location.back();
+  }
+
+  // ─── Fixed endpoint router ────────────────────────────
+  handleEndpoint(ep: any) {
+    // Address endpoints contain "/addresses" in their path
+    if (ep.path.includes('/addresses') || ep.path.startsWith('/addresses/')) {
+      // Those that need a customer ID first (POST and GET for a customer)
+      if (ep.path.includes('/customers/')) {
+        this.pendingEndpoint = ep;
+        this.contextCustomerId = '';           // reset
+        this.showAddressContextPopup = true;   // ask for customer ID first
+      } else {
+        // Direct address endpoints (/addresses/{addressId})
+        this.pendingEndpoint = null;
+        this.handleAddress(ep);
+      }
+    } else if (ep.path.startsWith('/customers')) {
+      // All customer endpoints go here
+      this.handleCustomer(ep);
+    }
+  }
+
+  // Customer ID collection for address operations
+  confirmAddressContext() {
+    const cid = this.safe(this.contextCustomerId);
+    if (!cid) {
+      this.showToastMessage('Customer ID is required', 'error');
+      return;
+    }
+    this.showAddressContextPopup = false;
+    if (this.pendingEndpoint) {
+      this.handleAddress(this.pendingEndpoint);  // continue with the collected ID
+    }
+  }
+
+  // ─── Customer handlers (unchanged) ────────────────────
   handleCustomer(ep: any) {
     const base = `${this.baseUrl}/customers`;
 
-    // GET ALL → /customers/getall
     if (ep.method === 'GET' && ep.path === '/customers/getall') {
       this.http.get<any>(`${base}/getall`, this.authHeader()).subscribe({
         next: (res) => {
           this.customers = this.extractData(res);
           this.showCustomersListPopup = true;
+          this.showToastMessage('Customers loaded', 'success');
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // POST → /customers/add
     if (ep.method === 'POST') {
       this.resetCustomerForm();
       this.customerActionType = 'POST';
@@ -137,7 +197,6 @@ export class Annie {
       return;
     }
 
-    // PUT → /customers/{customerId}
     if (ep.method === 'PUT') {
       this.customerActionType = 'PUT';
       this.customerActionTitle = 'Update Customer – Enter ID';
@@ -146,7 +205,6 @@ export class Annie {
       return;
     }
 
-    // DELETE → /customers/{customerId}
     if (ep.method === 'DELETE') {
       this.customerActionType = 'DELETE';
       this.customerActionTitle = 'Delete Customer – Enter ID';
@@ -155,7 +213,6 @@ export class Annie {
       return;
     }
 
-    // GET BY ID → /customers/{customerId}
     if (ep.method === 'GET' && ep.path === '/customers/{customerId}') {
       this.customerActionType = 'GET_BY_ID';
       this.customerActionTitle = 'View Customer Details – Enter ID';
@@ -170,11 +227,10 @@ export class Annie {
     const base = `${this.baseUrl}/customers`;
 
     if (!id) {
-      alert('Customer ID is required');
+      this.showToastMessage('Customer ID is required', 'error');
       return;
     }
 
-    // GET BY ID
     if (this.customerActionType === 'GET_BY_ID') {
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
@@ -182,24 +238,22 @@ export class Annie {
           this.showCustomerIdPopup = false;
           this.showCustomerDetailPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // DELETE
     if (this.customerActionType === 'DELETE') {
       this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
         next: () => {
-          alert('Customer Deleted ✅');
+          this.showToastMessage('Customer Deleted ✅', 'success');
           this.showCustomerIdPopup = false;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // PUT Step 1: fetch existing customer
     if (this.customerActionType === 'PUT') {
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
@@ -212,7 +266,7 @@ export class Annie {
           this.showCustomerIdPopup = false;
           this.showCustomerFormPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -223,26 +277,24 @@ export class Annie {
 
     const payload = { ...this.newCustomer };
 
-    // POST → /customers/add
     if (this.customerActionType === 'POST') {
       this.http.post(`${base}/add`, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Customer Created ✅');
+          this.showToastMessage('Customer Created ✅', 'success');
           this.closeCustomerPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
-    // PUT → /customers/{id}
     if (this.customerActionType === 'PUT') {
       this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Customer Updated ✅');
+          this.showToastMessage('Customer Updated ✅', 'success');
           this.closeCustomerPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -259,57 +311,58 @@ export class Annie {
     this.resetCustomerForm();
   }
 
-  // ================= ADDRESS HANDLERS (unchanged) =================
+  // ─── Address handlers ─────────────────────────────────
   handleAddress(ep: any) {
     const cid = this.safe(this.contextCustomerId);
-    if (!cid) {
-      alert('Please enter a Customer ID (context) first');
-      return;
+
+    // Endpoints that include /customers/ need a customer ID (we should already have it)
+    if (ep.path.includes('/customers/')) {
+      if (!cid) {
+        this.showToastMessage('Customer ID is required', 'error');
+        return;
+      }
+
+      if (ep.method === 'POST') {
+        this.resetAddressForm();
+        this.addressActionType = 'POST';
+        this.showAddressFormPopup = true;
+        return;
+      }
+
+      if (ep.method === 'GET') {
+        const url = `${this.baseUrl}/customers/${cid}/addresses`;
+        this.http.get<any>(url, this.authHeader()).subscribe({
+          next: (res) => {
+            this.addresses = this.extractData(res);
+            this.showAddressesListPopup = true;
+            this.showToastMessage('Addresses loaded', 'success');
+          },
+          error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
+        });
+        return;
+      }
     }
 
-    // POST /customers/{customerId}/addresses
-    if (ep.method === 'POST' && ep.path.includes('/customers/')) {
-      this.resetAddressForm();
-      this.addressActionType = 'POST';
-      this.showAddressFormPopup = true;
-      return;
-    }
-
-    // GET /customers/{customerId}/addresses
-    if (ep.method === 'GET' && ep.path.includes('/customers/')) {
-      const url = `${this.baseUrl}/customers/${cid}/addresses`;
-      this.http.get<any>(url, this.authHeader()).subscribe({
-        next: (res) => {
-          this.addresses = this.extractData(res);
-          this.showAddressesListPopup = true;
-        },
-        error: (err) => this.showError(err)
-      });
-      return;
-    }
-
-    // GET /addresses/{addressId}
+    // Direct address ID endpoints (/addresses/{addressId})
     if (ep.method === 'GET' && ep.path === '/addresses/{addressId}') {
       this.addressActionType = 'GET_BY_ID';
-      this.addressActionTitle = 'View Address Details – Enter Address ID';
+      this.addressActionTitle = 'View Address Details – Enter ID';
       this.addressActionId = '';
       this.showAddressIdPopup = true;
       return;
     }
 
-    // PUT /addresses/{addressId}
     if (ep.method === 'PUT') {
       this.addressActionType = 'PUT';
-      this.addressActionTitle = 'Update Address – Enter Address ID';
+      this.addressActionTitle = 'Update Address – Enter ID';
       this.addressActionId = '';
       this.showAddressIdPopup = true;
       return;
     }
 
-    // DELETE /addresses/{addressId}
     if (ep.method === 'DELETE') {
       this.addressActionType = 'DELETE';
-      this.addressActionTitle = 'Delete Address – Enter Address ID';
+      this.addressActionTitle = 'Delete Address – Enter ID';
       this.addressActionId = '';
       this.showAddressIdPopup = true;
       return;
@@ -321,7 +374,7 @@ export class Annie {
     const base = `${this.baseUrl}/addresses`;
 
     if (!id) {
-      alert('Address ID is required');
+      this.showToastMessage('Address ID is required', 'error');
       return;
     }
 
@@ -332,7 +385,7 @@ export class Annie {
           this.showAddressIdPopup = false;
           this.showAddressDetailPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -340,15 +393,16 @@ export class Annie {
     if (this.addressActionType === 'DELETE') {
       this.http.delete(`${base}/${id}`, this.authHeader()).subscribe({
         next: () => {
-          alert('Address Deleted ✅');
+          this.showToastMessage('Address Deleted ✅', 'success');
           this.showAddressIdPopup = false;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
 
     if (this.addressActionType === 'PUT') {
+      // Fetch existing address to pre-fill the form and to get its customerId
       this.http.get<any>(`${base}/${id}`, this.authHeader()).subscribe({
         next: (res) => {
           const data = this.extractData(res)[0];
@@ -360,10 +414,12 @@ export class Annie {
             postalCode: data.postalCode,
             country: data.country
           };
+          // Store the customerId from the fetched address for later use
+          this.contextCustomerId = data.customerId;
           this.showAddressIdPopup = false;
           this.showAddressFormPopup = true;
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
@@ -373,16 +429,21 @@ export class Annie {
     const id = this.safe(this.addressActionId);
     const base = `${this.baseUrl}/addresses`;
 
+    if (!cid) {
+      this.showToastMessage('Customer ID is required. Please re-open the endpoint.', 'error');
+      return;
+    }
+
     const payload = { ...this.newAddress, customerId: cid };
 
     if (this.addressActionType === 'POST') {
       const url = `${this.baseUrl}/customers/${cid}/addresses`;
       this.http.post(url, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Address Added ✅');
+          this.showToastMessage('Address Added ✅', 'success');
           this.closeAddressPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
       return;
     }
@@ -390,10 +451,10 @@ export class Annie {
     if (this.addressActionType === 'PUT') {
       this.http.put(`${base}/${id}`, payload, this.authHeader()).subscribe({
         next: () => {
-          alert('Address Updated ✅');
+          this.showToastMessage('Address Updated ✅', 'success');
           this.closeAddressPopups();
         },
-        error: (err) => this.showError(err)
+        error: (err) => this.showToastMessage(err?.error?.message ?? err?.message, 'error')
       });
     }
   }
