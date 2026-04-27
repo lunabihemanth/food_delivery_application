@@ -19,18 +19,6 @@ public class CustomerService implements ICustomerService {
     @Override
     public CustomerResponseDTO save(CustomerRequestDTO dto) {
 
-        // Validation
-        if (dto.getCustomerName() == null || dto.getCustomerName().isBlank()) {
-            throw new BadRequestException("Customer name cannot be empty");
-        }
-
-        if (dto.getCustomerEmail() == null || dto.getCustomerEmail().isBlank()) {
-            throw new BadRequestException("Email cannot be empty");
-        }
-
-        if (dto.getCustomerPhone() == null || dto.getCustomerPhone().isBlank()) {
-            throw new BadRequestException("Phone cannot be empty");
-        }
 
         //Email must be unique
         if (customerRepository.existsByCustomerEmail(dto.getCustomerEmail())) {
