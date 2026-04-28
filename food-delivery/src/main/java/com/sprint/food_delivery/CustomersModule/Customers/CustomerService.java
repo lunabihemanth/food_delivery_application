@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.sprint.food_delivery.Exception.BadRequestException;
 import com.sprint.food_delivery.Exception.ConflictException;
 import com.sprint.food_delivery.Exception.ResourceNotFoundException;
 
@@ -16,21 +17,32 @@ public class CustomerService implements ICustomerService {
     private CustomerRepository customerRepository;
 
     @Override
-    public CustomerResponseDTO save(CustomerRequestDTO dto) {
+public CustomerResponseDTO save(CustomerRequestDTO dto) {
 
-
-        //Email must be unique
-        if (customerRepository.existsByCustomerEmail(dto.getCustomerEmail())) {
-            throw new ConflictException("Email already exists");
-        }
-        //Convert dto to entity
-        Customers customer = new Customers();
-        customer.setCustomerName(dto.getCustomerName());
-        customer.setCustomerEmail(dto.getCustomerEmail());
-        customer.setCustomerPhone(dto.getCustomerPhone());
-
-        return mapToDTO(customerRepository.save(customer));
+    if (dto.getCustomerName() == null || dto.getCustomerName().trim().isEmpty()) {
+        throw new BadRequestException("Customer name cannot be empty");
     }
+
+    if (dto.getCustomerEmail() == null || dto.getCustomerEmail().trim().isEmpty()) {
+        throw new BadRequestException("Customer email cannot be empty");
+    }
+
+    if (dto.getCustomerPhone() == null || dto.getCustomerPhone().trim().isEmpty()) {
+        throw new BadRequestException("Customer phone cannot be empty");
+    }
+
+    // Email must be unique
+    if (customerRepository.existsByCustomerEmail(dto.getCustomerEmail())) {
+        throw new ConflictException("Email already exists");
+    }
+
+    Customers customer = new Customers();
+    customer.setCustomerName(dto.getCustomerName());
+    customer.setCustomerEmail(dto.getCustomerEmail());
+    customer.setCustomerPhone(dto.getCustomerPhone());
+
+    return mapToDTO(customerRepository.save(customer));
+}
 
     // GET ALL(entity to dto)
     @Override
@@ -53,6 +65,7 @@ public class CustomerService implements ICustomerService {
     // UPDATE
     @Override
     public CustomerResponseDTO update(Integer id, CustomerRequestDTO dto) {
+
 
         Customers existing = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));

@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
         return map;
     }
 
-    // 🔴 400 - Bad Request
+    // 400 - Bad Request
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(BadRequestException ex) {
         return new ResponseEntity<>(
@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 🔴 404 - Not Found
+    // 404 - Not Found
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
         return new ResponseEntity<>(
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 🔴 409 - Conflict
+    // 409 - Conflict
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
         return new ResponseEntity<>(
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 🔴 Fallback (500)
+    // Fallback (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         return new ResponseEntity<>(
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 🔴 Customer Not Found
+    // Customer Not Found
     @ExceptionHandler(CustomerNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleCustomerNotFound(CustomerNotFoundException ex) {
         return new ResponseEntity<>(
@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 🔴 Delivery Address Not Found
+    // Delivery Address Not Found
     @ExceptionHandler(DeliveryAddressNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleAddressNotFound(DeliveryAddressNotFoundException ex) {
         return new ResponseEntity<>(
@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
 }
 
 
-    // 🔴 Driver Not Found
+    // Driver Not Found
     @ExceptionHandler(DriverNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleDriverNotFound(DriverNotFoundException ex) {
         return new ResponseEntity<>(
